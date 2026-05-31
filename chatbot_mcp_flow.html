@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Trust AI — 系統全量流程圖與智慧代理分流架構</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Outfit:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #05070c;
+            --bg-panel: rgba(11, 19, 36, 0.7);
+            --border-glow: rgba(41, 121, 255, 0.2);
+            --border-active: rgba(41, 121, 255, 0.8);
+            --text-main: #f1f5f9;
+            --text-muted: #8a99ad;
+            
+            /* Themes colors */
+            --color-ingest: #00e5ff;
+            --color-store: #00e676;
+            --color-chat: #2979ff;
+            --color-precise: #ffab00;
+            --color-abstract: #d500f9;
+            
+            --glow-ingest: rgba(0, 229, 255, 0.4);
+            --glow-store: rgba(0, 230, 118, 0.4);
+            --glow-chat: rgba(41, 121, 255, 0.4);
+            --glow-precise: rgba(255, 171, 0, 0.4);
+            --glow-abstract: rgba(213, 0, 249, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Particles canvas & grid background */
+        #bg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+            background-image: 
+                linear-gradient(rgba(41, 121, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(41, 121, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Header HUD */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 3rem;
+            background: rgba(5, 7, 12, 0.85);
+            border-bottom: 1px solid rgba(41, 121, 255, 0.15);
+            backdrop-filter: blur(15px);
+            z-index: 10;
+        }
+
+        .header-title-group h1 {
+            font-family: 'Orbitron', 'Noto Sans TC', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--color-ingest), var(--color-chat), var(--color-abstract));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .header-title-group p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-back {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-ingest);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            padding: 0.5rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .btn-back:hover {
+            background: rgba(0, 229, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Layout Container */
+        .app-container {
+            display: flex;
+            flex: 1;
+            padding: 1.5rem;
+            gap: 1.5rem;
+            height: calc(100vh - 80px);
+            overflow: hidden;
+        }
+
+        /* Left Control Panel */
+        .control-panel {
+            width: 340px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            z-index: 2;
+        }
+
+        .panel-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+            color: var(--color-ingest);
+            border-left: 3px solid var(--color-ingest);
+            padding-left: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .simulation-modes {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .mode-option {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .mode-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .mode-option.selected[data-mode="precise"] {
+            border-color: var(--color-precise);
+            background: rgba(255, 171, 0, 0.05);
+            box-shadow: 0 0 15px rgba(255, 171, 0, 0.15);
+        }
+
+        .mode-option.selected[data-mode="abstract"] {
+            border-color: var(--color-abstract);
+            background: rgba(213, 0, 249, 0.05);
+            box-shadow: 0 0 15px rgba(213, 0, 249, 0.15);
+        }
+
+        .radio-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .mode-option.selected[data-mode="precise"] .radio-dot {
+            border-color: var(--color-precise);
+        }
+        .mode-option.selected[data-mode="abstract"] .radio-dot {
+            border-color: var(--color-abstract);
+        }
+
+        .radio-dot::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: transparent;
+            transition: all 0.3s;
+        }
+
+        .mode-option.selected[data-mode="precise"] .radio-dot::after { background: var(--color-precise); }
+        .mode-option.selected[data-mode="abstract"] .radio-dot::after { background: var(--color-abstract); }
+
+        .mode-label h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .mode-label p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, var(--color-ingest), var(--color-chat));
+            color: #030708;
+            border: none;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.5);
+        }
+
+        .btn-start:disabled {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Terminal Console Logs widget */
+        .terminal-logs {
+            flex: 1;
+            background: #020408;
+            border: 1px solid rgba(41, 121, 255, 0.15);
+            border-radius: 12px;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--color-store);
+            font-weight: bold;
+        }
+
+        .terminal-dot-group {
+            display: flex;
+            gap: 4px;
+        }
+        .terminal-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .td-red { background: #ff4757; }
+        .td-yellow { background: #ffa502; }
+        .td-green { background: #2ed573; }
+
+        .terminal-body {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            scroll-behavior: smooth;
+        }
+        .terminal-body::-webkit-scrollbar { width: 4px; }
+        .terminal-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .log-row {
+            line-height: 1.4;
+            word-break: break-all;
+        }
+        .log-time { color: #636e72; margin-right: 0.5rem; }
+        .log-tag { font-weight: bold; margin-right: 0.5rem; }
+        .tag-ingest { color: var(--color-ingest); }
+        .tag-store { color: var(--color-store); }
+        .tag-chat { color: var(--color-chat); }
+        .tag-precise { color: var(--color-precise); }
+        .tag-abstract { color: var(--color-abstract); }
+        .tag-system { color: #ffffff; }
+
+        /* Center Flowchart Workspace */
+        .workspace-panel {
+            flex: 1;
+            background: rgba(7, 10, 19, 0.4);
+            border: 1px solid rgba(41, 121, 255, 0.1);
+            border-radius: 20px;
+            overflow: auto;
+            position: relative;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            z-index: 1;
+        }
+
+        .flowchart-workspace {
+            position: relative;
+            padding: 3rem 2rem;
+            min-width: 1100px;
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            gap: 2.5rem;
+        }
+
+        .svg-connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .svg-connections path {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 2.5px;
+            transition: stroke 0.4s, stroke-width 0.4s;
+        }
+
+        .svg-connections path.active {
+            stroke-width: 3.5px;
+        }
+        .svg-connections path.active[data-phase="ingest"] { stroke: var(--color-ingest); }
+        .svg-connections path.active[data-phase="store"] { stroke: var(--color-store); }
+        .svg-connections path.active[data-phase="chat"] { stroke: var(--color-chat); }
+        .svg-connections path.active[data-phase="precise"] { stroke: var(--color-precise); }
+        .svg-connections path.active[data-phase="abstract"] { stroke: var(--color-abstract); }
+
+        .svg-connections path.connection-flow {
+            stroke-width: 3.5px;
+        }
+        .svg-connections path.connection-flow[data-phase="ingest"] { stroke: var(--color-ingest); }
+        .svg-connections path.connection-flow[data-phase="store"] { stroke: var(--color-store); }
+        .svg-connections path.connection-flow[data-phase="chat"] { stroke: var(--color-chat); }
+        .svg-connections path.connection-flow[data-phase="precise"] { stroke: var(--color-precise); }
+        .svg-connections path.connection-flow[data-phase="abstract"] { stroke: var(--color-abstract); }
+
+        /* Flow Columns layout */
+        .flow-column {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .column-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .node-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            flex: 1;
+        }
+
+        /* Flow Node Card styling */
+        .flow-node {
+            background: rgba(10, 15, 30, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 1rem 1.2rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .flow-node:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: rgba(255,255,255,0.25);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Color configurations for active states */
+        .flow-node.active[data-phase="ingest"] {
+            border-color: var(--color-ingest);
+            background: rgba(0, 229, 255, 0.05);
+            box-shadow: 0 0 20px var(--glow-ingest), inset 0 0 10px rgba(0, 229, 255, 0.1);
+        }
+        .flow-node.active[data-phase="store"] {
+            border-color: var(--color-store);
+            background: rgba(0, 230, 118, 0.05);
+            box-shadow: 0 0 20px var(--glow-store), inset 0 0 10px rgba(0, 230, 118, 0.1);
+        }
+        .flow-node.active[data-phase="chat"] {
+            border-color: var(--color-chat);
+            background: rgba(41, 121, 255, 0.05);
+            box-shadow: 0 0 20px var(--glow-chat), inset 0 0 10px rgba(41, 121, 255, 0.1);
+        }
+        .flow-node.active[data-phase="precise"] {
+            border-color: var(--color-precise);
+            background: rgba(255, 171, 0, 0.05);
+            box-shadow: 0 0 20px var(--glow-precise), inset 0 0 10px rgba(255, 171, 0, 0.1);
+        }
+        .flow-node.active[data-phase="abstract"] {
+            border-color: var(--color-abstract);
+            background: rgba(213, 0, 249, 0.05);
+            box-shadow: 0 0 20px var(--glow-abstract), inset 0 0 10px rgba(213, 0, 249, 0.1);
+        }
+
+        .node-num {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 900;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            transition: all 0.3s;
+        }
+
+        /* Node icon / numbering updates */
+        .flow-node.active .node-num {
+            background: var(--active-col);
+            border-color: var(--active-col);
+            color: #030708;
+            font-weight: bold;
+        }
+
+        .flow-node[data-phase="ingest"] { --active-col: var(--color-ingest); }
+        .flow-node[data-phase="store"] { --active-col: var(--color-store); }
+        .flow-node[data-phase="chat"] { --active-col: var(--color-chat); }
+        .flow-node[data-phase="precise"] { --active-col: var(--color-precise); }
+        .flow-node[data-phase="abstract"] { --active-col: var(--color-abstract); }
+
+        .node-info {
+            flex: 1;
+        }
+
+        .node-info h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.15rem;
+        }
+        .node-info p {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* Chat column branching layout */
+        .chat-column {
+            width: 420px;
+        }
+
+        .split-tracks {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 1.5rem;
+            position: relative;
+        }
+
+        .track {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            background: rgba(255,255,255,0.01);
+            border: 1px solid rgba(255,255,255,0.02);
+            border-radius: 12px;
+            padding: 0.8rem;
+        }
+
+        .track-header {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        .precise-track {
+            border-top: 2px solid rgba(255, 171, 0, 0.3);
+        }
+        .abstract-track {
+            border-top: 2px solid rgba(213, 0, 249, 0.3);
+        }
+
+        .precise-track .flow-node { border-left: 3px solid var(--color-precise); }
+        .abstract-track .flow-node { border-left: 3px solid var(--color-abstract); }
+
+        /* Right Detail Inspector Panel */
+        .inspector-panel {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            z-index: 2;
+        }
+
+        .inspector-body {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.2rem;
+        }
+        .inspector-body::-webkit-scrollbar { width: 4px; }
+        .inspector-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .inspector-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 400px;
+            color: var(--text-muted);
+            text-align: center;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .inspector-placeholder svg {
+            width: 48px;
+            height: 48px;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .inspector-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .inspector-content.show {
+            display: block;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+        }
+
+        .badge-cyan { background: rgba(0, 229, 255, 0.12); color: var(--color-ingest); border: 1px solid rgba(0, 229, 255, 0.25); }
+        .badge-green { background: rgba(0, 230, 118, 0.12); color: var(--color-store); border: 1px solid rgba(0, 230, 118, 0.25); }
+        .badge-blue { background: rgba(41, 121, 255, 0.12); color: var(--color-chat); border: 1px solid rgba(41, 121, 255, 0.25); }
+        .badge-orange { background: rgba(255, 171, 0, 0.12); color: var(--color-precise); border: 1px solid rgba(255, 171, 0, 0.25); }
+        .badge-purple { background: rgba(213, 0, 249, 0.12); color: var(--color-abstract); border: 1px solid rgba(213, 0, 249, 0.25); }
+
+        .inspector-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .code-meta {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            font-size: 0.8rem;
+        }
+
+        .meta-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .meta-label {
+            color: var(--text-muted);
+            width: 75px;
+            flex-shrink: 0;
+        }
+        .meta-val {
+            color: var(--color-ingest);
+            font-weight: 500;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .meta-val a {
+            color: var(--color-ingest);
+            text-decoration: underline;
+        }
+
+        .inspector-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .inspector-desc code {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffb74d;
+            padding: 0.1rem 0.3rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .schema-section-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .schema-box {
+            background: #020408;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 0.8rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.75rem;
+            color: #2ed573;
+            overflow-x: auto;
+            margin-bottom: 1.2rem;
+            max-height: 200px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SVG Line drawing animation rule */
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -40;
+            }
+        }
+        .connection-flow {
+            stroke-dasharray: 8 12;
+            animation: dash 1.2s linear infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .app-container {
+                flex-direction: column;
+                overflow: auto;
+                height: auto;
+            }
+            .control-panel, .inspector-panel {
+                width: 100%;
+            }
+            .terminal-logs {
+                height: 200px;
+            }
+            .workspace-panel {
+                min-height: 600px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-overlay"></div>
+    <canvas id="bg-canvas"></canvas>
+
+    <header>
+        <div class="header-title-group">
+            <h1>Eco Trust AI 架構解析與代理分流系統</h1>
+            <p>系統底層 Python finbert.py 數據挖掘與 API 問題意圖 Agent 分流執行流程圖</p>
+        </div>
+        <div class="header-actions">
+            <a href="/eco_sys/esg_dashboard.php" class="btn-back">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                返回核心看板
+            </a>
+            <a href="/eco_sys/chat.php" class="btn-back" style="color:var(--color-chat); border-color:rgba(41, 121, 255, 0.3)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                前往 AI 顧問
+            </a>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- Left Column: Controls & Console -->
+        <div class="control-panel">
+            <div class="panel-card">
+                <h3 class="panel-title">模擬控制器</h3>
+                
+                <div class="simulation-modes">
+                    <div class="mode-option selected" data-mode="precise">
+                        <div class="radio-dot"></div>
+                        <div class="mode-label">
+                            <h4>精確問題路徑 (Fast Path)</h4>
+                            <p>查詢特定數值或單一財務指標</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mode-option" data-mode="abstract">
+                        <div class="radio-dot"></div>
+                        <div class="mode-label">
+                            <h4>抽象問題路徑 (Agent Path)</h4>
+                            <p>多資料源、投資評估與 Agent 思考</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-action btn-start" id="btnRunSim">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    啟動路徑模擬
+                </button>
+                <button class="btn-action btn-reset" id="btnResetSim" disabled>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                    重置模擬
+                </button>
+            </div>
+
+            <!-- Terminal Panel -->
+            <div class="terminal-logs">
+                <div class="terminal-header">
+                    <span>PROCESS CONSOLE MONITOR</span>
+                    <div class="terminal-dot-group">
+                        <div class="terminal-dot td-red"></div>
+                        <div class="terminal-dot td-yellow"></div>
+                        <div class="terminal-dot td-green"></div>
+                    </div>
+                </div>
+                <div class="terminal-body" id="terminalLogs">
+                    <div class="log-row">
+                        <span class="log-time">[00:00:00]</span>
+                        <span class="log-tag tag-system">[SYSTEM]</span>
+                        <span style="color:#636e72">準備就緒。請選擇路徑並點擊啟動模擬...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Column: SVG & Node Workspace -->
+        <div class="workspace-panel">
+            <div class="flowchart-workspace" id="flowchartWorkspace">
+                <!-- SVG Canvas for connection links -->
+                <svg class="svg-connections" id="svgConnections"></svg>
+
+                <!-- Column 1: Ingestion -->
+                <div class="flow-column">
+                    <div class="column-header">Phase 1: Ingestion & Extraction</div>
+                    <div class="node-list">
+                        <div class="flow-node" id="node-pdf" data-phase="ingest">
+                            <div class="node-num">1</div>
+                            <div class="node-info">
+                                <h3>PDF 上傳與解析</h3>
+                                <p>api/upload_pdf.php</p>
+                            </div>
+                        </div>
+
+                        <div class="flow-node" id="node-precheck" data-phase="ingest">
+                            <div class="node-num">2</div>
+                            <div class="node-info">
+                                <h3>ESG 閥門驗證</h3>
+                                <p>finbert.py : is_esg</p>
+                            </div>
+                        </div>
+
+                        <div class="flow-node" id="node-chunking" data-phase="ingest">
+                            <div class="node-num">3</div>
+                            <div class="node-info">
+                                <h3>智慧分段與 FinBERT</h3>
+                                <p>finbert.py : sentiment</p>
+                            </div>
+                        </div>
+
+                        <div class="flow-node" id="node-scoring" data-phase="ingest">
+                            <div class="node-num">4</div>
+                            <div class="node-info">
+                                <h3>指標量化與誠信分</h3>
+                                <p>finbert.py : scoring</p>
+                            </div>
+                        </div>
+
+                        <div class="flow-node" id="node-gen2" data-phase="ingest">
+                            <div class="node-num">5</div>
+                            <div class="node-info">
+                                <h3>Gen-2 承諾提取</h3>
+                                <p>finbert.py : extract</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 2: Storage & Vis -->
+                <div class="flow-column" style="justify-content: center; gap: 3.5rem;">
+                    <div class="column-header" style="margin-bottom: -1rem;">Phase 2: Storage & Vis</div>
+                    <div class="node-list" style="justify-content: center; gap: 3.5rem;">
+                        <div class="flow-node" id="node-db" data-phase="store">
+                            <div class="node-num">6</div>
+                            <div class="node-info">
+                                <h3>資料庫儲存與 Scraper</h3>
+                                <p>upload_pdf.php & news</p>
+                            </div>
+                        </div>
+
+                        <div class="flow-node" id="node-dashboard" data-phase="store">
+                            <div class="node-num">7</div>
+                            <div class="node-info">
+                                <h3>看板視覺化 (Zone 1-4)</h3>
+                                <p>esg_dashboard.php</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 3: AI Chat Routing -->
+                <div class="flow-column chat-column">
+                    <div class="column-header">Phase 3: Dialog & Agent Routing</div>
+                    <div class="node-list">
+                        <div class="flow-node" id="node-query" data-phase="chat">
+                            <div class="node-num">8</div>
+                            <div class="node-info">
+                                <h3>智能顧問提問與資料庫篩選</h3>
+                                <p>範圍篩選與 chat_api.php 請求</p>
+                            </div>
+                        </div>
+
+                        <div class="flow-node" id="node-router" data-phase="chat">
+                            <div class="node-num">9</div>
+                            <div class="node-info">
+                                <h3>意圖分類路由器</h3>
+                                <p>chat_api.php : Router</p>
+                            </div>
+                        </div>
+
+                        <!-- Branches layout -->
+                        <div class="split-tracks">
+                            <!-- Precise Track -->
+                            <div class="track precise-track">
+                                <div class="track-header">精確問題通道</div>
+                                <div class="flow-node" id="node-precise-sql" data-phase="precise">
+                                    <div class="node-num">10A</div>
+                                    <div class="node-info">
+                                        <h3>直連 SQL 查詢</h3>
+                                        <p>數據快速定位</p>
+                                    </div>
+                                </div>
+                                <div class="flow-node" id="node-precise-reply" data-phase="precise">
+                                    <div class="node-num">11A</div>
+                                    <div class="node-info">
+                                        <h3>生成簡短回答</h3>
+                                        <p>直觀數據包裝</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Abstract Track -->
+                            <div class="track abstract-track">
+                                <div class="track-header">抽象問題通道 (Agent)</div>
+                                <div class="flow-node" id="node-abstract-plan" data-phase="abstract">
+                                    <div class="node-num">10B</div>
+                                    <div class="node-info">
+                                        <h3>Agent 思考與規劃</h3>
+                                        <p>ReAct & CoT 拆解</p>
+                                    </div>
+                                </div>
+                                <div class="flow-node" id="node-abstract-retrieval" data-phase="abstract">
+                                    <div class="node-num">11B</div>
+                                    <div class="node-info">
+                                        <h3>自主多源工具調用</h3>
+                                        <p>DB + RAG + News</p>
+                                    </div>
+                                </div>
+                                <div class="flow-node" id="node-abstract-reply" data-phase="abstract">
+                                    <div class="node-num">12B</div>
+                                    <div class="node-info">
+                                        <h3>綜合推理顧問答覆</h3>
+                                        <p>Ollama Qwen-2.5</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Right Column: Inspector Details -->
+        <div class="inspector-panel">
+            <div class="panel-card" style="height: 100%;">
+                <h3 class="panel-title">資料檢視器</h3>
+                
+                <div class="inspector-body">
+                    <div class="inspector-placeholder" id="inspectorPlaceholder">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <p>點選流程圖中任一節點，或開始模擬以查看該步驟的後端代碼、輸入/輸出結構以及詳細工作流程。</p>
+                    </div>
+
+                    <div class="inspector-content" id="inspectorContent">
+                        <span class="phase-badge badge-cyan" id="nodeBadge">Phase 1</span>
+                        <h2 class="inspector-title" id="nodeTitle">Node Title</h2>
+                        
+                        <div class="code-meta">
+                            <div class="meta-row">
+                                <span class="meta-label">關聯代碼:</span>
+                                <span class="meta-val" id="codeFile">file.py</span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">代碼位置:</span>
+                                <span class="meta-val" id="codeLines">L1 - L10</span>
+                            </div>
+                        </div>
+
+                        <p class="inspector-desc" id="nodeDesc">Description...</p>
+
+                        <div class="schema-section">
+                            <h4 class="schema-section-title">輸入資料結構 (Input Payload)</h4>
+                            <pre class="schema-box" id="nodeInput">JSON</pre>
+                        </div>
+
+                        <div class="schema-section">
+                            <h4 class="schema-section-title">輸出結果結構 (Output Payload)</h4>
+                            <pre class="schema-box" id="nodeOutput">JSON</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Node details javascript storage -->
+    <script>
+        const nodeDetails = {
+            'node-pdf': {
+                title: '1. PDF 檔案上傳與檔名解析',
+                phase: '資料分析處理 (Phase 1)',
+                badgeClass: 'badge-cyan',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/api/upload_pdf.php#L30-L90">api/upload_pdf.php</a>',
+                lines: 'L30 - L90',
+                desc: '使用者在數據管理中心上傳公司 ESG 永續報告 PDF（建議命名如：<code>1101_台泥_2023.pdf</code>）。系統首先檢驗檔案上傳的狀態碼與大小，隨後解析檔名取得 4-6 位的股票代號 (<code>company_id</code>) 及年度 (<code>year</code>)。接著查詢資料庫檢測是否已重複上傳，通過後移動至 <code>uploads/</code> 目錄暫存。',
+                input: {
+                    "file": {
+                        "name": "1101_台泥_2023.pdf",
+                        "size": 8923180,
+                        "type": "application/pdf"
+                    },
+                    "post_params": {
+                        "force": "0"
+                    }
+                },
+                output: {
+                    "success": true,
+                    "company_id": 1101,
+                    "year": 2023,
+                    "dest_path": "c:/xampp/htdocs/eco_sys/uploads/1101_台泥_2023.pdf"
+                }
+            },
+            'node-precheck': {
+                title: '2. 文本擷取與 ESG 閥門驗證',
+                phase: '資料分析處理 (Phase 1)',
+                badgeClass: 'badge-cyan',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/finbert.py#L89-L94">finbert.py</a>',
+                lines: 'is_esg_report() (L89 - L94)',
+                desc: '系統執行 shell 命令呼叫本機 Python 環境，讀取暫存的 PDF。利用 <code>pdfplumber</code> 擷取各頁文字並彙整。隨後進行 <b>ESG 閥門預先校驗 (ESG sentinel pre-check)</b>：\n- 掃描文本中所有預設的 ESG 關鍵詞詞頻是否達到 5 個。\n- 校驗核心「哨兵關鍵字」（如：sustainability, ESG, 減碳, 董事會）是否至少命中 2 個。\n\n若未通過此閥門，表示該 PDF 非 ESG 報告（如一般的營運說明或普通簡報），將輸出 <code>NOT_ESG_REPORT</code> 中止運行並刪除暫存檔。',
+                input: {
+                    "pdf_path": "c:/xampp/htdocs/eco_sys/uploads/1101_台泥_2023.pdf",
+                    "SENTINEL_MIN_HITS": 2,
+                    "KEYWORD_MIN_HITS": 5
+                },
+                output: {
+                    "is_esg": true,
+                    "keyword_hits": 32,
+                    "sentinel_hits": 9,
+                    "text_length": 182410
+                }
+            },
+            'node-chunking': {
+                title: '3. 智慧段落抽樣與 FinBERT 意圖分析',
+                phase: '資料分析處理 (Phase 1)',
+                badgeClass: 'badge-cyan',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/finbert.py#L131-L228">finbert.py</a>',
+                lines: 'get_smart_chunks() & analyze_sentiment() (L131 - L228)',
+                desc: '為防範大模型 context limit 飽和與非必要雜訊，採取<b>智慧採樣策略</b>：優先抽取包含「硬指標 (HARD_METRICS)」如：ISO、第三方驗證、減碳 %、基準年等的句子（最多保留 30 句），其餘在前、中、後文進行等間距均勻抽樣，補足至 100 句作為分析樣本。隨後輸入至 HuggingFace 的 <code>yiyanghkust/finbert-tone-chinese</code> 中文情感分類模型，計算其在 ESG 論述中的積極（意圖）、消極（風險）、中立機率，並計算加權平均得出 <code>intent_score</code>。',
+                input: {
+                    "extracted_text_len": 182410,
+                    "max_chunks": 100,
+                    "model_id": "yiyanghkust/finbert-tone-chinese"
+                },
+                output: {
+                    "sampled_chunks_count": 100,
+                    "intent_score": 0.7248,
+                    "probabilities_example": {
+                        "Neutral": 0.154,
+                        "Positive": 0.782,
+                        "Negative": 0.064
+                    }
+                }
+            },
+            'node-scoring': {
+                title: '4. 數字密度量化與誠信信心分數計算',
+                phase: '資料分析處理 (Phase 1)',
+                badgeClass: 'badge-cyan',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/finbert.py#L230-L265">finbert.py</a>',
+                lines: 'get_metrics() & calculate_integrity_score() (L230 - L265)',
+                desc: '系統執行核心評分算法以計算報告書數據的可信程度：\n1. **數字密度 (Numeracy)**：使用 <code>jieba</code> 將乾淨的文本進行斷詞，計算文中的「數值/百分比數量」佔「總詞彙量」的比率。\n2. **指標豐富度 (KPI Diversity)**：檢索與 ESG keywords 矩陣匹配的相異詞彙種類。\n3. **可靠性指數 (Credibility Index)**：將數字密度、指標豐富度與外部風險值 (Risk Score) 依權重配置加權合成。\n4. **信心分數 (Confidence Score)**：將意圖強度與可靠性指數相加，通過 <b>Sigmoid 激活函數</b>，將輸出區間映射至 0.0 ~ 1.0。此函數具備「去飽和、拉大差距」的特性，使低質報告無所遁形。',
+                input: {
+                    "intent_avg": 0.7248,
+                    "raw_kpi_count": 18,
+                    "raw_numeracy": 0.0824,
+                    "external_risk": 30.0
+                },
+                output: {
+                    "numeracy_normalized": 0.618,
+                    "kpi_count_normalized": 1.0,
+                    "credibility_index": 0.8124,
+                    "raw_final_score": 0.7588,
+                    "confidence_score": 0.9231
+                }
+            },
+            'node-gen2': {
+                title: '5. Gen-2 細粒度承諾特徵提取',
+                phase: '資料分析處理 (Phase 1)',
+                badgeClass: 'badge-cyan',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/finbert.py#L152-L203">finbert.py</a>',
+                lines: 'extract_gen2_promises() (L152 - L203)',
+                desc: '本步驟進行 Gen-2 指標挖掘。系統檢索所有句子，識別含有「承諾、目標、計畫、預計、設定」等核心動詞的承諾句。接著解析每個承諾句是否包含：\n1. **量化數據 (has_quant)**：正則匹配含有 %、tCO2e、萬噸、kWh 等單位的數值。\n2. **明確時限 (has_time)**：正則匹配 20XX年、by 20XX 等年份特徵。\n\n根據匹配結果，判定信賴度等級：兩者皆具備為 <code>HIGH</code>，有一者為 <code>MED</code>，皆無為 <code>LOW</code>。同時統計其主題歸屬分佈。',
+                input: {
+                    "raw_sentences_count": 1420
+                },
+                output: {
+                    "total_promises": 14,
+                    "quant_rate": 0.6429,
+                    "timeframe_rate": 0.5000,
+                    "topic_distribution": { "E": 6, "S": 5, "G": 3, "HARD_METRICS": 0, "OTHER": 0 },
+                    "high_confidence_commitments": [
+                        { "text": "承諾於 2025 年底前，範疇一碳排放強度下降 12%...", "topic": "E", "confidence": "HIGH" },
+                        { "text": "計畫在 2026 年底前，ISO 45001 職業安全認證覆蓋率達 100%...", "topic": "S", "confidence": "HIGH" }
+                    ]
+                }
+            },
+            'node-db': {
+                title: '6. 資料庫存入與背景輿論抓取',
+                phase: '資料儲存與視覺化 (Phase 2)',
+                badgeClass: 'badge-green',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/api/upload_pdf.php#L201-L265">api/upload_pdf.php</a>',
+                lines: 'L201 - L265',
+                desc: '當 Python 腳本成功執行完畢，後端 PHP 接收其輸出的 CSV 及 JSON 特徵。PHP 發起資料庫事務，使用 <code>INSERT INTO ... ON DUPLICATE KEY UPDATE</code> 將所有的特徵值（信心分、量化率、時限率、Gen-2 承諾 JSON 數據、硬指標數量）存儲入 <code>carbon_emissions</code> 資料表中。\n\n確認存儲成功後，PHP 會利用 <code>popen("start /B php api/background_fetch_news.php ...")</code> 啟動<b>非阻塞背景執行緒</b>。此背景腳本會立刻自動爬取該公司在該年度的網路新聞，並調用 NLP 模型標註新聞情感與信心指數，以供交叉對比。',
+                input: {
+                    "db_transaction": {
+                        "table": "carbon_emissions",
+                        "operation": "INSERT/UPDATE"
+                    },
+                    "background_job": {
+                        "script": "api/background_fetch_news.php",
+                        "args": [1101, "台泥", 2023]
+                    }
+                },
+                output: {
+                    "success": true,
+                    "db_row_affected": 1,
+                    "background_process_status": "ASYNC_LAUNCHED"
+                }
+            },
+            'node-dashboard': {
+                title: '7. ESG 核心看板與數據視覺化',
+                phase: '資料儲存與視覺化 (Phase 2)',
+                badgeClass: 'badge-green',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/esg_dashboard.php">esg_dashboard.php</a> & <a href="file:///c:/xampp/htdocs/eco_sys/api/chart_data.php">api/chart_data.php</a>',
+                lines: 'Plotly Chart Rendering',
+                desc: '當使用者訪問「ESG 核心看板」時，前端 Plotly 模組向 <code>api/chart_data.php</code> 發送異步請求，獲取已選定公司的歷年與季度指標。後端會整合財務表 <code>company_performance</code> 與 ESG 特徵表 <code>carbon_emissions</code>，並回傳格式化 JSON。前端據此渲染三組圖表：\n- **Zone 1**：各公司季度 ROE 柱狀圖對比。\n- **Zone 2**：信心得分歷年趨勢折線圖。\n- **Zone 4**：企業核心指標橫向對照（ROE 柱狀與信心分折線雙 Y 軸對照），直觀揭示企業的實質永續價值。',
+                input: {
+                    "request_company_ids": "1101",
+                    "weighted": "1"
+                },
+                output: {
+                    "roe_trend": [ { "code": 1101, "quarterly_series": [ { "period": "2023-Q1", "roe": 1.2 } ] } ],
+                    "confidence_trend": [ { "code": 1101, "series": [ { "year": 2023, "confidence": 0.9231 } ] } ],
+                    "charts_rendered": ["roeQuarterlyChart", "confTrendChart", "industryBarChart"]
+                }
+            },
+            'node-query': {
+                title: '8. 智能顧問提問與資料庫篩選',
+                phase: '智能對話與代理分流 (Phase 3)',
+                badgeClass: 'badge-blue',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/chat.php#L489-L541">chat.php</a>',
+                lines: 'sendMessage() (L489 - L541)',
+                desc: '在對話前端，使用者挑選了目標公司或跨公司範圍（如：<code>1101_台泥</code>、<code>ALL_跨公司對比</code>）與年份範圍（如：<code>2023</code>、<code>ALL</code> 歷年）。此<b>資料庫範圍篩選功能</b>是本系統的核心功能之一，能直接限制後續 SQL 查詢的數據範圍以及本地 RAG 檢索的 Markdown 檔案範圍，從源頭杜絕大模型的幻覺生成並提升回覆速度。隨後輸入提問並觸發 <code>sendMessage()</code> 打包 payload 發送 POST 請求給 <code>api/chat_api.php</code>。',
+                input: {
+                    "message": "分析一下台泥 2023 年是否值得投資？",
+                    "company": "1101_台泥",
+                    "year": "2023",
+                    "history": [
+                        { "role": "user", "content": "你好" },
+                        { "role": "system", "content": "您好！我是您的 ESG 投資顧問..." }
+                    ]
+                },
+                output: {
+                    "api_payload_sent": true
+                }
+            },
+            'node-router': {
+                title: '9. 問題意圖分類路由器',
+                phase: '智能對話與代理分流 (Phase 3)',
+                badgeClass: 'badge-blue',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/api/chat_api.php#L31-L180">api/chat_api.php</a>',
+                lines: 'L31 - L180',
+                desc: '後端 API 接收到請求後，進行首輪<b>意圖識別與難度評估</b>：\n- **精確問題 (Precise Question)**：如果使用者查詢的是特定具體數值，例如「信心得分是多少？」或「Q3 的 ROE 是多少？」，此為精確數據查詢，分流至「快速直連 SQL 通道」，繞過複雜的推理以節省 CPU 開銷。\n- **抽象問題 (Abstract Question)**：若使用者提問的是「是否值得投資？」、「減碳承諾是否可信？」等需要多重指標交叉比對與長文檢索的問題，系統則將此分流至<b>「Agent 智慧代理通道」</b>，啟動多步思考與自主資料調用。',
+                input: {
+                    "message": "分析一下台泥 2023 年是否值得投資？"
+                },
+                output: {
+                    "is_abstract_question": true,
+                    "target_flow": "ABSTRACT_AGENT_PATH"
+                }
+            },
+            'node-precise-sql': {
+                title: '10A. 直連 SQL 數據查詢',
+                phase: '精確問題分流 (Phase 3 - Precise)',
+                badgeClass: 'badge-orange',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/api/chat_api.php#L78-L140">api/chat_api.php</a>',
+                lines: 'L78 - L140',
+                desc: '對於簡單明確的數據點，系統不需要大模型的任務拆解能力。後端直接執行預先準備的 SQL 查詢語句，由資料庫迅速檢索 <code>carbon_emissions</code> 的特定分數，或 <code>company_performance</code> 的季度 ROE。',
+                input: {
+                    "query_type": "PRECISE_METRIC",
+                    "table": "carbon_emissions",
+                    "fields": ["confidence_score"],
+                    "company_id": 1101,
+                    "year": 2023
+                },
+                output: {
+                    "query_result": {
+                        "confidence_score": 0.9231
+                    }
+                }
+            },
+            'node-precise-reply': {
+                title: '11A. 快速自然語言答覆',
+                phase: '精確問題分流 (Phase 3 - Precise)',
+                badgeClass: 'badge-orange',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/api/chat_api.php#L195-L226">api/chat_api.php</a>',
+                lines: 'L195 - L226',
+                desc: '後端將資料庫查詢出的數值封裝進 Prompt 中，發送給本地運行的 Ollama <code>qwen2.5:7b</code> 模型。模型無需進行深度的關聯與評估，僅使用自然語言包裝該數據並回傳給使用者，實現亞秒級的快速響應。',
+                input: {
+                    "system_prompt": "回答台泥2023年誠信分數...",
+                    "context": "confidence_score = 0.9231"
+                },
+                output: {
+                    "reply": "台泥 2023 年的誠信信心分數為 0.9231。"
+                }
+            },
+            'node-abstract-plan': {
+                title: '10B. Agent 思考與任務拆解 (Task Planning)',
+                phase: '抽象問題分流 (Phase 3 - Agent)',
+                badgeClass: 'badge-purple',
+                file: 'api/chat_api.php (Cognitive Loop)',
+                lines: 'Agent Reasoning Engine',
+                desc: '當偵測到問題為抽象類型，大語言模型將啟動<b>代理思維鏈 (Chain of Thought/ReAct)</b>。Agent 首先在認知層面上分析問題，判斷要回答使用者的抽象問題（例如：「台泥 2023 年是否值得投資」），需要調閱哪些背景知識與量化數值。\n\nAgent 會自我規劃出多步任務，例如：\n1. 查詢該公司的季度財務 ROE 狀況。\n2. 調閱 PDF 完整報告擷取的 Markdown 本地文件 (RAG) 以尋求減碳目標與高信度承諾項。\n3. 調閱背景新聞情感倾向以確認外部輿論風險。',
+                input: {
+                    "query": "分析一下台泥 2023 年是否值得投資？"
+                },
+                output: {
+                    "thought_chain": [
+                        "Thought: 要評估該公司投資價值，需結合財務績效、ESG報告可信度與輿論風險。",
+                        "Task 1: 調閱 company_performance 表查詢 2023 各季 ROE。",
+                        "Task 2: 讀取本地 1101_台泥_2023.md 文件檢索環境與社會減排目標細節。",
+                        "Task 3: 調閱 news 表查詢 2023 年台泥的新聞輿情情感比例。"
+                    ]
+                }
+            },
+            'node-abstract-retrieval': {
+                title: '11B. AI 自主多源資料調用與檢索',
+                phase: '抽象問題分流 (Phase 3 - Agent)',
+                badgeClass: 'badge-purple',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/api/chat_api.php#L78-L155">api/chat_api.php</a>',
+                lines: 'L78 - L155',
+                desc: 'Agent 根據任務規劃，<b>自動調用底層工具</b>去不同資料來源檢索數據，實現自主資料填充：\n1. **資料庫檢索**：查詢 <code>company_performance</code> 並組裝季度 ROE 文本；查詢 <code>carbon_emissions</code> 撈取誠信信心分與 Gen-2 承諾統計。\n2. **RAG 知識庫讀取**：讀取本地路徑 <code>C:\\Users\\samng\\Desktop\\eco trust v2\\1101_台泥_2023.md</code> 中的報告摘要（此為 PDF 經 finbert 分析後持久化的 MD 格式，包含高信度承諾與分佈描述）。\n3. **新聞輿情檢索**：從 <code>news</code> 表中查詢對應股票在該年份關聯新聞（至多 10 筆），提供正負面輿論分佈。',
+                input: {
+                    "tool_calls": ["query_db_financials", "read_local_rag_md", "query_db_news"]
+                },
+                output: {
+                    "retrieved_results": {
+                        "roe_text": "Q1: 1.2%, Q2: 2.1%, Q3: 1.9%, Q4: 2.0%",
+                        "esg_text": "信心得分: 0.9231, 量化比率: 64%, 總承諾: 14",
+                        "rag_text": "...台泥 2023 年設立了中長期碳減排目標：計畫於 2025 年達到減碳 12%...",
+                        "news_text": "正面新聞 6 筆, 中立 3 筆, 負面 1 筆"
+                    }
+                }
+            },
+            'node-abstract-reply': {
+                title: '12B. 綜合推理與專業顧問回覆',
+                phase: '抽象問題分流 (Phase 3 - Agent)',
+                badgeClass: 'badge-purple',
+                file: '<a href="file:///c:/xampp/htdocs/eco_sys/api/chat_api.php#L157-L226">api/chat_api.php</a>',
+                lines: 'L157 - L226',
+                desc: 'Agent 將獲取的財務績效、ESG 誠信分、報告 Markdown 文本以及新聞情感數據拼接成完整的富上下文 System Prompt，隨後呼叫本地運行的 Ollama <code>qwen2.5:7b</code> 模型。模型在充足的真實數據庫與知識庫支持下，進行交叉比對與綜合推理，產出一份格式精美（以 Markdown 條列）、語意連貫、客觀專業的投資評估顧問回覆，避免幻覺產生。',
+                input: {
+                    "model": "qwen2.5:7b",
+                    "messages": [
+                        { "role": "system", "content": "您是 Eco Trust AI 投資顧問。以下是台泥 2023 數據：[ROE: Q1-Q4...][ESG: 信心分 0.92...][新聞: 正面 6...][RAG: ...]" },
+                        { "role": "user", "content": "分析一下台泥 2023 年是否值得投資？" }
+                    ]
+                },
+                output: {
+                    "reply": "### 台泥 2023 年度投資價值與 ESG 綜合評估\n\n**1. 財務績效**\n台泥於 2023 年各季度 ROE 表現穩健，由首季 1.2% 上升至第四季 2.0%，顯示其基本面具備一定抗壓性。\n\n**2. ESG 承諾與實質誠信度**\n本系統對台泥 2023 年的報告進行了深度挖掘，評定其**誠信信心分數為 0.92**，在同行業中可信度極高。報告內共含 14 項核心承諾，其中量化承諾高達 64%，並包含在 **2025 年前減碳 12%** 等具體且具時限的目標，無口號式宣傳嫌疑。\n\n**3. 輿論監察對照**\n經新聞情感分析，台泥 2023 年的正面情感新聞佔比達 80% (6筆)，聚焦於儲能發展及綠能開發；僅有 1 筆負面新聞為市場大盤波動，無環境違規裁罰事件。這與其報告中提及的綠色轉型承諾高度相符。\n\n**4. 投資評估建議**\n綜合以上數據，台泥在 2023 年具備優良的永續投資價值。其 ESG 數據扎實且有具體落實進程，外部輿論支持度高，建議可將其列為永續綠色投資組合的重點關注標的。"
+                }
+            }
+        };
+
+        // Canvas particle background logic
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const particles = [];
+        for (let i = 0; i < 15; i++) { // Reduced from 45 to 15 to lower CPU overhead
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2 + 1,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                alpha: Math.random() * 0.5 + 0.1
+            });
+        }
+
+        function animateBg() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#05070c';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw particles
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 229, 255, ${p.alpha})`;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = 'rgba(0, 229, 255, 0.4)';
+                ctx.fill();
+            });
+
+            // Draw connection lines - Optimized with squared distance checks to avoid unnecessary square roots
+            const len = particles.length;
+            for (let i = 0; i < len; i++) {
+                const p1 = particles[i];
+                for (let j = i + 1; j < len; j++) {
+                    const p2 = particles[j];
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const distSq = dx * dx + dy * dy;
+                    if (distSq < 10000) { // 100^2
+                        const dist = Math.sqrt(distSq);
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(41, 121, 255, ${(1 - dist/100) * 0.12})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.shadowBlur = 0;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+        // Node click inspector update
+        const nodes = document.querySelectorAll('.flow-node');
+        const placeholder = document.getElementById('inspectorPlaceholder');
+        const content = document.getElementById('inspectorContent');
+
+        function inspectNode(nodeId) {
+            nodes.forEach(n => n.classList.remove('selected-node'));
+            const nodeEl = document.getElementById(nodeId);
+            if (nodeEl) nodeEl.classList.add('selected-node');
+
+            const info = nodeDetails[nodeId];
+            if (!info) return;
+
+            placeholder.style.display = 'none';
+            content.style.display = 'block';
+
+            document.getElementById('nodeTitle').textContent = info.title;
+            document.getElementById('nodeBadge').textContent = info.phase;
+            document.getElementById('nodeBadge').className = `phase-badge ${info.badgeClass}`;
+            document.getElementById('codeFile').innerHTML = info.file;
+            document.getElementById('codeLines').textContent = info.lines;
+            document.getElementById('nodeDesc').innerHTML = info.desc;
+            document.getElementById('nodeInput').textContent = JSON.stringify(info.input, null, 2);
+            document.getElementById('nodeOutput').textContent = JSON.stringify(info.output, null, 2);
+        }
+
+        nodes.forEach(node => {
+            node.addEventListener('click', () => {
+                inspectNode(node.id);
+            });
+        });
+
+        // SVG lines dynamic connection drawing
+        const svg = document.getElementById('svgConnections');
+        const workspace = document.getElementById('flowchartWorkspace');
+
+        const connectionDefinitions = [
+            { from: 'node-pdf', to: 'node-precheck', phase: 'ingest' },
+            { from: 'node-precheck', to: 'node-chunking', phase: 'ingest' },
+            { from: 'node-chunking', to: 'node-scoring', phase: 'ingest' },
+            { from: 'node-scoring', to: 'node-gen2', phase: 'ingest' },
+            
+            // Connect Column 1 to Column 2
+            { from: 'node-gen2', to: 'node-db', phase: 'store' },
+            { from: 'node-db', to: 'node-dashboard', phase: 'store' },
+            
+            // Connect Column 2 to Column 3
+            { from: 'node-dashboard', to: 'node-query', phase: 'chat' },
+            { from: 'node-query', to: 'node-router', phase: 'chat' },
+            
+            // Branch from router
+            { from: 'node-router', to: 'node-precise-sql', phase: 'precise' },
+            { from: 'node-router', to: 'node-abstract-plan', phase: 'abstract' },
+            
+            // Tracks paths
+            { from: 'node-precise-sql', to: 'node-precise-reply', phase: 'precise' },
+            { from: 'node-abstract-plan', to: 'node-abstract-retrieval', phase: 'abstract' },
+            { from: 'node-abstract-retrieval', to: 'node-abstract-reply', phase: 'abstract' }
+        ];
+
+        function drawConnections() {
+            // Clear existing paths
+            svg.innerHTML = '';
+            const wsRect = workspace.getBoundingClientRect();
+            
+            connectionDefinitions.forEach(conn => {
+                const elFrom = document.getElementById(conn.from);
+                const elTo = document.getElementById(conn.to);
+                
+                if (!elFrom || !elTo) return;
+                
+                const rFrom = elFrom.getBoundingClientRect();
+                const rTo = elTo.getBoundingClientRect();
+                
+                let x1, y1, x2, y2, pathD;
+                
+                // Determine layout direction relative to workspace
+                if (Math.abs(rFrom.left - rTo.left) < 50) {
+                    // Vertical connection (same column)
+                    x1 = (rFrom.left + rFrom.right) / 2 - wsRect.left;
+                    y1 = rFrom.bottom - wsRect.top;
+                    x2 = (rTo.left + rTo.right) / 2 - wsRect.left;
+                    y2 = rTo.top - wsRect.top;
+                    
+                    const midY = (y1 + y2) / 2;
+                    pathD = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+                } else {
+                    // Horizontal connection (different columns / branching)
+                    if (rFrom.left < rTo.left) {
+                        x1 = rFrom.right - wsRect.left;
+                        y1 = (rFrom.top + rFrom.bottom) / 2 - wsRect.top;
+                        x2 = rTo.left - wsRect.left;
+                        y2 = (rTo.top + rTo.bottom) / 2 - wsRect.top;
+                    } else {
+                        x1 = rFrom.left - wsRect.left;
+                        y1 = (rFrom.top + rFrom.bottom) / 2 - wsRect.top;
+                        x2 = rTo.right - wsRect.left;
+                        y2 = (rTo.top + rTo.bottom) / 2 - wsRect.top;
+                    }
+                    
+                    const midX = (x1 + x2) / 2;
+                    pathD = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+                }
+                
+                // Create SVG path element
+                const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                pathEl.setAttribute('d', pathD);
+                pathEl.setAttribute('id', `path-${conn.from}-${conn.to}`);
+                pathEl.setAttribute('data-phase', conn.phase);
+                svg.appendChild(pathEl);
+            });
+        }
+
+        // Draw connections after DOM renders and whenever layout changes
+        setTimeout(drawConnections, 200);
+        window.addEventListener('resize', drawConnections);
+        
+        // Watch for layout changes inside workspace due to scroll/renders
+        const observer = new ResizeObserver(drawConnections);
+        observer.observe(workspace);
+
+        // Simulation script
+        const modeOptions = document.querySelectorAll('.mode-option');
+        let currentMode = 'precise'; // Default
+        
+        modeOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                if (simPlaying) return; // Disable during playback
+                modeOptions.forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                currentMode = opt.getAttribute('data-mode');
+                
+                // Clear state
+                resetSimulation();
+                logMessage('SYSTEM', `切換至 [${currentMode === 'precise' ? '精確問題路徑' : '抽象問題路徑'}]，請點擊啟動模擬...`);
+            });
+        });
+
+        const terminal = document.getElementById('terminalLogs');
+        function logMessage(tag, message, phaseClass = 'tag-system') {
+            const time = new Date().toTimeString().split(' ')[0];
+            const logRow = document.createElement('div');
+            logRow.className = 'log-row';
+            logRow.innerHTML = `
+                <span class="log-time">[${time}]</span>
+                <span class="log-tag ${phaseClass}">[${tag}]</span>
+                <span style="color:#e2e8f0">${message}</span>
+            `;
+            terminal.appendChild(logRow);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        let simPlaying = false;
+        let simTimer = null;
+        let simSteps = [];
+        let simIndex = 0;
+
+        const baseSteps = [
+            { node: 'node-pdf', tag: 'INGEST', text: '使用者上傳報告 1101_台泥_2023.pdf，啟動後端上傳程序 api/upload_pdf.php', phase: 'ingest', cls: 'tag-ingest' },
+            { node: 'node-precheck', tag: 'AI-MODEL', text: '文本解析成功。執行 finbert.py : is_esg_report()。檢測出 32 個關鍵字命中，順利通過 ESG 哨兵驗證。', phase: 'ingest', cls: 'tag-ingest' },
+            { node: 'node-chunking', tag: 'AI-MODEL', text: '執行 get_smart_chunks()。篩選 30 個硬指標段落，均勻抽樣 70 段。輸入 FinBERT model 完成情感分析，意圖分數: 0.7248', phase: 'ingest', cls: 'tag-ingest' },
+            { node: 'node-scoring', tag: 'AI-MODEL', text: '數據量化分析中... 檢出數字密度 8.24%，指標豐富度 18。依權重完成 Sigmoid 映射評分，誠信信心分: 0.9231', phase: 'ingest', cls: 'tag-ingest' },
+            { node: 'node-gen2', tag: 'AI-MODEL', text: 'Gen-2 特徵提取：完成 14 項承諾定位，量化承諾率 64%，提取出 2 項高信度 (HIGH) 承諾，分類歸屬 E、S、G 主題。', phase: 'ingest', cls: 'tag-ingest' },
+            { node: 'node-db', tag: 'DATABASE', text: '後端執行 SQL 寫入 carbon_emissions 表完成。非同步指令觸發 background_fetch_news.php 成功。', phase: 'store', cls: 'tag-store' },
+            { node: 'node-dashboard', tag: 'VISUAL', text: 'ESG 核心看板 Plotly.js 異步加載完畢。Zone 1、Zone 2 與 Zone 4 指標對比圖渲染成功。', phase: 'store', cls: 'tag-store' },
+            { node: 'node-query', tag: 'USER', text: '使用者開啟 AI 智能顧問。設定目標: 1101_台泥_2023，輸入提問並發送 API 請求。', phase: 'chat', cls: 'tag-chat' },
+            { node: 'node-router', tag: 'ROUTER', text: '後端 chat_api.php 接收 payload。正在執行意圖判讀與分流評估...', phase: 'chat', cls: 'tag-chat' }
+        ];
+
+        const preciseBranchSteps = [
+            { node: 'node-precise-sql', tag: 'DATABASE', text: '分類為：精確問題。分流至 SQL 通道。直連執行 SELECT confidence_score...，歷時 3ms', phase: 'precise', cls: 'tag-precise' },
+            { node: 'node-precise-reply', tag: 'AI-BOT', text: '將數值 [0.9231] 拼接 Prompt 傳入 Ollama。Qwen 模型直接回覆：「台泥 2023 年的誠信信心分數為 0.9231。」模擬完成。', phase: 'precise', cls: 'tag-precise' }
+        ];
+
+        const abstractBranchSteps = [
+            { node: 'node-abstract-plan', tag: 'AGENT', text: '分類為：抽象問題。觸發 Agent 行為。AI 進行 Chain of Thought / ReAct 思考，自主拆解 3 項資訊調用子任務。', phase: 'abstract', cls: 'tag-abstract' },
+            { node: 'node-abstract-retrieval', tag: 'AGENT', text: 'Agent 自主調用工具撈取資料中：\n- 抓取 SQL 財務季度 ROE；\n- 讀取本地 1101_台泥_2023.md 知識庫內容 (RAG)；\n- 檢索 2023 年度歷史新聞情感數據。', phase: 'abstract', cls: 'tag-abstract' },
+            { node: 'node-abstract-reply', tag: 'AI-BOT', text: '拼裝 Context 發送給本機 Ollama Qwen 2.5:7b。模型對財務 ROE、誠信分與新聞輿情進行交叉對照分析，生成 Markdown 格式的投資顧問報告。模擬完成。', phase: 'abstract', cls: 'tag-abstract' }
+        ];
+
+        const btnRunSim = document.getElementById('btnRunSim');
+        const btnResetSim = document.getElementById('btnResetSim');
+
+        function resetSimulation() {
+            if (simTimer) clearTimeout(simTimer);
+            simPlaying = false;
+            simIndex = 0;
+            btnRunSim.disabled = false;
+            btnRunSim.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                啟動路徑模擬
+            `;
+            btnResetSim.disabled = true;
+            
+            // Remove active classes
+            nodes.forEach(n => n.classList.remove('active', 'selected-node'));
+            document.querySelectorAll('.svg-connections path').forEach(p => {
+                p.classList.remove('active', 'connection-flow');
+            });
+            
+            // Hide inspector
+            placeholder.style.display = 'flex';
+            content.style.display = 'none';
+        }
+
+        btnResetSim.addEventListener('click', () => {
+            resetSimulation();
+            terminal.innerHTML = '';
+            logMessage('SYSTEM', `重置完成。請重新啟動...`);
+        });
+
+        btnRunSim.addEventListener('click', () => {
+            if (simPlaying) return;
+            
+            resetSimulation();
+            terminal.innerHTML = '';
+            simPlaying = true;
+            btnRunSim.disabled = true;
+            btnRunSim.innerHTML = `<span style="display:inline-block; width:12px; height:12px; border:2px solid #030708; border-top-color:transparent; border-radius:50%; animation:spin 1s linear infinite; margin-right:5px;"></span>模擬中...`;
+            btnResetSim.disabled = false;
+            
+            // Combine steps based on path
+            simSteps = [...baseSteps];
+            if (currentMode === 'precise') {
+                simSteps = simSteps.concat(preciseBranchSteps);
+            } else {
+                simSteps = simSteps.concat(abstractBranchSteps);
+            }
+            
+            runNextStep();
+        });
+
+        function runNextStep() {
+            if (!simPlaying) return;
+            
+            if (simIndex >= simSteps.length) {
+                // Done!
+                simPlaying = false;
+                btnRunSim.disabled = false;
+                btnRunSim.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    啟動路徑模擬
+                `;
+                logMessage('SYSTEM', `===== 流程模擬順利結束 =====`);
+                return;
+            }
+            
+            const step = simSteps[simIndex];
+            
+            // Activate Node
+            const nodeEl = document.getElementById(step.node);
+            if (nodeEl) {
+                nodeEl.classList.add('active');
+                inspectNode(step.node);
+            }
+            
+            // Activate leading connection paths
+            if (simIndex > 0) {
+                const prevStep = simSteps[simIndex - 1];
+                let pathEl = document.getElementById(`path-${prevStep.node}-${step.node}`);
+                
+                // If it is routing, handle branching paths
+                if (prevStep.node === 'node-router') {
+                    pathEl = document.getElementById(`path-node-router-${step.node}`);
+                }
+                
+                if (pathEl) {
+                    pathEl.classList.add('active', 'connection-flow');
+                }
+            }
+            
+            // Log message
+            logMessage(step.tag, step.text, step.cls);
+            
+            simIndex++;
+            
+            // Determine delay based on task complexity
+            let delay = 2000;
+            if (step.node === 'node-precheck') delay = 2200;
+            if (step.node === 'node-chunking') delay = 2500;
+            if (step.node === 'node-scoring') delay = 2200;
+            if (step.node === 'node-abstract-plan') delay = 2800;
+            if (step.node === 'node-abstract-retrieval') delay = 3000;
+            if (step.node === 'node-abstract-reply') delay = 3500;
+            
+            simTimer = setTimeout(runNextStep, delay);
+        }
+    </script>
+    <style>
+        /* Node selected styling */
+        .selected-node {
+            border-color: rgba(255, 255, 255, 0.4) !important;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.15) !important;
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</body>
+</html>

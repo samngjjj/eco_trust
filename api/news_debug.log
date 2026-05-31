@@ -1,0 +1,34 @@
+[2026-04-09 12:19:09] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "聯發科 2454 ESG" 2>&1
+[2026-04-09 12:19:42] Output length: 13908
+[2026-04-09 12:20:13] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "嘉泥 1103 ESG" 2>&1
+[2026-04-09 12:20:19] Output length: 2868
+[2026-04-09 12:25:54] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "聯發科|2454" 2>&1
+[2026-04-09 12:26:01] Output length: 13513
+[2026-04-09 12:28:59] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-04-09 12:29:07] Output length: 13649
+[2026-04-09 12:37:43] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "聯發科|2454" 2>&1
+[2026-04-09 12:37:51] Output length: 13513
+[2026-04-09 12:38:00] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-04-09 12:38:08] Output length: 13649
+[2026-04-12 16:25:37] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-04-12 16:26:16] Output length: 13778
+[2026-04-19 16:34:10] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "嘉泥|1103" 2>&1
+[2026-04-19 16:34:17] Output length: 12542
+[2026-04-19 16:34:33] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-04-19 16:34:39] Output length: 13718
+[2026-05-03 08:15:37] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-05-03 08:16:29] Output length: 13819
+[2026-05-09 09:31:21] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-05-09 09:31:29] Output length: 13912
+[2026-05-09 09:36:20] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "聯發科|2454" 2>&1
+[2026-05-09 09:36:28] Output length: 14646
+[2026-05-09 09:36:54] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-05-09 09:37:01] Output length: 13912
+[2026-05-09 09:52:01] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台積電|2330" 2>&1
+[2026-05-09 09:52:08] Output len: 13687
+[2026-05-09 10:04:22] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-05-09 10:04:29] Output len: 15040
+[2026-05-09 15:58:55] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp2\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-05-09 15:59:02] Output len: 14435
+[2026-05-30 20:07:06] Executing: "C:\Users\samng\AppData\Local\Microsoft\WindowsApps\python.exe" "C:\xampp\htdocs\eco_sys/news_nlp.py" "台泥|1101" 2>&1
+[2026-05-30 20:07:13] Output len: 13639

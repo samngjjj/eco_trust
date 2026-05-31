@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.venv/
+var/
+bin/
+
+# Models and large files
+finbert_model/
+uploads/*.pdf
+uploads/*.json
+uploads/*.csv
+
+# SQL dumps
+test2.sql
+
+# System Files
+.DS_Store
+Thumbs.db
