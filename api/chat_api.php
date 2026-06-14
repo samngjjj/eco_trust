@@ -238,7 +238,7 @@ EOT;
             
             // Fallback: 讀取舊的 .md 知識庫
             if (!$hasPageIndex) {
-                $mdFilePath = "C:\\Users\\samng\\Desktop\\eco trust v2\\{$companyStr}_{$year}.md";
+                $mdFilePath = dirname(__DIR__) . "/eco trust v2/{$companyStr}_{$year}.md";
                 if (file_exists($mdFilePath)) {
                     $mdContent = file_get_contents($mdFilePath);
                     if (mb_strlen($mdContent, 'UTF-8') > 40000) {

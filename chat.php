@@ -7,7 +7,7 @@ if (!isset($isPro) || !$isPro) {
 require_once __DIR__ . '/config.php';
 $activePage = 'chat';
 
-$mdDir = "C:\\Users\\samng\\Desktop\\eco trust v2";
+$mdDir = __DIR__ . "/eco trust v2";
 $validCombos = [];
 if (is_dir($mdDir)) {
     foreach (glob($mdDir . "/*.md") as $file) {
