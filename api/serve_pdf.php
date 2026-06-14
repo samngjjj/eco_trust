@@ -8,12 +8,25 @@
  * Usage: api/serve_pdf.php?file=1101_台泥_2023.pdf
  */
 
-require_once dirname(__DIR__) . '/auth_check.php';
-require_once dirname(__DIR__) . '/config.php';
+// ── Inline Auth (no redirect) ──────────────────────────────────────
+// We intentionally avoid require auth_check.php because it redirects
+// to landing.php on failure.  PDF.js would follow that 302 and try to
+// parse the landing HTML as a PDF, producing a cryptic parse error.
+if (session_status() === PHP_SESSION_NONE) session_start();
 
-// ── Auth: Pro users only ───────────────────────────────────────────
-if (!isset($isPro) || !$isPro) {
+if (empty($_SESSION['user'])) {
     http_response_code(403);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => '請先登入。']);
+    exit;
+}
+
+$currentRole = $_SESSION['role'] ?? 'user';
+$isPro = ($currentRole === 'pro' || $currentRole === 'admin');
+
+if (!$isPro) {
+    http_response_code(403);
+    header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['error' => '僅限 Pro 方案用戶存取 PDF 檔案。']);
     exit;
 }
@@ -61,6 +74,17 @@ header('Content-Disposition: inline; filename="' . rawurlencode($filename) . '"'
 header('Accept-Ranges: bytes');
 header('Cache-Control: private, max-age=3600');
 
+// Clear any output buffers to ensure direct streaming and avoid memory exhaustion
+while (ob_get_level() > 0) {
+    ob_end_clean();
+}
+
+// ── Handle HTTP HEAD request ────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'HEAD') {
+    header("Content-Length: $fileSize");
+    exit;
+}
+
 // ── Handle HTTP Range requests (PDF.js partial content) ────────────
 if (isset($_SERVER['HTTP_RANGE'])) {
     // Parse Range header, e.g. "bytes=0-1023"
@@ -91,6 +115,7 @@ if (isset($_SERVER['HTTP_RANGE'])) {
         while ($remaining > 0 && !feof($fp)) {
             $chunk = fread($fp, min(8192, $remaining));
             echo $chunk;
+            flush();
             $remaining -= strlen($chunk);
         }
         fclose($fp);

@@ -372,12 +372,12 @@ $activePage = 'timecube';
                 
                 <div class="control-group">
                     <label>🚨 高獲利閾值 (ROE %)</label>
-                    <input type="number" id="roeThreshold" value="15" step="1" onchange="generateGraph()">
+                    <input type="number" id="roeThreshold" value="3" step="1" onchange="generateGraph()">
                 </div>
                 
                 <div class="control-group">
                     <label>⚠️ 低信心閾值 (Confidence Threshold)</label>
-                    <input type="number" id="confThreshold" value="0.40" step="0.01" onchange="generateGraph()">
+                    <input type="number" id="confThreshold" value="0.85" step="0.01" onchange="generateGraph()">
                 </div>
 
                 <div class="control-group" style="padding-top:1.2rem; margin-top:0.5rem; border-top:1px solid rgba(255,255,255,0.06); flex-direction:row; align-items:center; justify-content:space-between;">
@@ -502,7 +502,7 @@ $activePage = 'timecube';
                             <div class="info-icon red">🚨</div>
                             <div class="info-text">
                                 <strong>高獲利 / 低誠信雙重警示</strong>
-                                <span>當 ROE 超過高獲利閾值（預設 15%）且信心分低於低信心閾值時，系統會標記「⚠️ 高獲利/低誠信風險」，代表公司帳面績效亮眼但 ESG 透明度不足，為潛在 Greenwashing 信號。</span>
+                                <span>當 ROE 超過高獲利閾值（預設 3%）且信心分低於低信心閾值時，系統會標記「⚠️ 高獲利/低誠信風險」，代表公司帳面績效亮眼但 ESG 透明度不足，為潛在信號。</span>
                             </div>
                         </div>
                         <div class="info-item">
@@ -600,8 +600,8 @@ $activePage = 'timecube';
             graphDiv.style.opacity = '1';
             noDataDiv.style.display = 'none';
 
-            let roeThresh = parseFloat(document.getElementById('roeThreshold').value) || 15;
-            let confThreshInput = parseFloat(document.getElementById('confThreshold').value) || 0.4;
+            let roeThresh = parseFloat(document.getElementById('roeThreshold').value) || 3;
+            let confThreshInput = parseFloat(document.getElementById('confThreshold').value) || 0.85;
             let confThresh = confThreshInput > 1 ? confThreshInput / 100 : confThreshInput;
 
             try {

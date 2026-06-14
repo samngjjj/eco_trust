@@ -303,6 +303,12 @@ if __name__ == "__main__":
         else:
             query = f"{raw_input} (ESG OR 永續 OR 淨零)"
         items = _rss_search(query, max_items=30)
+        
+        # 為了相容，我們為每篇新聞解析 report_year 欄位，避免在新聞監察看板重新搜尋時遺失年份資訊
+        for item in items:
+            pub_year = parse_published_year(item.get("published", ""))
+            item["report_year"] = pub_year if pub_year else datetime.now().year
+
         items = run_analysis_with_sentiment(items)
         total = len(items)
         counts = {"Positive": 0, "Neutral": 0, "Negative": 0}

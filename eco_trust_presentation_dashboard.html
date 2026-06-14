@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoTrust AI v2.0 - 專題發表暨技術報告展示系統</title>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX for LaTeX Math -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+  
+  <!-- Mermaid for Flowcharts -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      theme: 'dark',
+      startOnLoad: true,
+      flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
+      themeVariables: {
+        primaryColor: '#0b0e14',
+        primaryTextColor: '#e8eaf6',
+        lineColor: '#2979ff',
+        background: '#0b0e14'
+      }
+    });
+  </script>
+
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --card-bg: rgba(17, 22, 32, 0.75);
+      --border: rgba(41, 121, 255, 0.25);
+      --border-hover: rgba(0, 230, 118, 0.4);
+      --accent: #2979ff;
+      --accent-glow: rgba(41, 121, 255, 0.35);
+      --success: #00e676;
+      --success-glow: rgba(0, 230, 118, 0.25);
+      --warning: #ff9f43;
+      --danger: #ff4757;
+      --text: #e8eaf6;
+      --text-muted: #8892b0;
+      --sidebar-w: 260px;
+      --radius: 12px;
+      --font-sans: 'Inter', 'Noto Sans TC', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        linear-gradient(rgba(41, 121, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(41, 121, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      color: var(--text);
+      font-family: var(--font-sans);
+      overflow-x: hidden;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-hover);
+    }
+
+    /* Sidebar Navigation */
+    aside {
+      width: var(--sidebar-w);
+      background: rgba(11, 14, 20, 0.95);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      backdrop-filter: blur(15px);
+    }
+
+    .brand {
+      padding: 2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, var(--accent), var(--success));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text {
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #fff, #90caf9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-list {
+      list-style: none;
+      padding: 1.5rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-item button {
+      width: 100%;
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      color: var(--text-muted);
+      text-align: left;
+      font-size: 0.92rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-item button:hover {
+      background: rgba(41, 121, 255, 0.08);
+      border-color: rgba(41, 121, 255, 0.15);
+      color: #fff;
+    }
+
+    .nav-item.active button {
+      background: rgba(41, 121, 255, 0.15);
+      border-color: var(--border);
+      color: var(--accent);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(41, 121, 255, 0.15), inset 0 0 10px rgba(41, 121, 255, 0.05);
+    }
+
+    .nav-item.active button .icon-wrap {
+      color: var(--success);
+      filter: drop-shadow(0 0 5px var(--success-glow));
+    }
+
+    .sidebar-footer {
+      padding: 1.25rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    /* Main Content Area */
+    main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 2.5rem;
+      max-width: 1200px;
+      margin-right: auto;
+    }
+
+    /* Sections */
+    section {
+      display: none;
+      animation: fadeIn 0.45s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Typography */
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #fff 30%, #90caf9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .section-subtitle {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .badge-cyber {
+      background: rgba(41, 121, 255, 0.1);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 0.2rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Card styling */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+
+    .card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent);
+    }
+    
+    .card.success-card::before {
+      background: var(--success);
+      box-shadow: 0 0 10px var(--success-glow);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: #fff;
+    }
+
+    /* List grids */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .feature-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 1.25rem;
+      transition: all 0.25s;
+    }
+
+    .feature-item:hover {
+      background: rgba(41, 121, 255, 0.03);
+      border-color: rgba(41, 121, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .fi-title {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .fi-desc {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    /* Flowchart and Code Blocks */
+    .mermaid-box {
+      background: #07090d;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      margin: 1rem 0;
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    pre {
+      background: #07090d !important;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      position: relative;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #9cdcfe;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: rgba(41, 121, 255, 0.2);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* LaTeX Math Boxes */
+    .math-block {
+      background: rgba(41, 121, 255, 0.03);
+      border: 1px solid rgba(41, 121, 255, 0.12);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      text-align: center;
+      overflow-x: auto;
+    }
+
+    /* Schema Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+
+    th, td {
+      padding: 0.85rem 1rem;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    th {
+      background: rgba(41, 121, 255, 0.08);
+      color: #fff;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+    }
+
+    tr:hover td {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    /* Slide Deck Player Component */
+    .slide-player {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      height: 600px;
+      background: #07090d;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .slide-sidebar {
+      background: rgba(17, 22, 32, 0.8);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .slide-sidebar-header {
+      padding: 1.25rem;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .slide-list {
+      flex: 1;
+      overflow-y: auto;
+      list-style: none;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .slide-list-item button {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      text-align: left;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .slide-list-item button:hover {
+      background: rgba(255,255,255,0.03);
+      color: #fff;
+    }
+
+    .slide-list-item.active button {
+      background: rgba(0, 230, 118, 0.12);
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .slide-body {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .slide-screen {
+      height: 320px;
+      background: radial-gradient(circle at center, #111b2b, #05080f);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .slide-screen-watermark {
+      position: absolute;
+      top: 1rem;
+      left: 1.5rem;
+      font-size: 0.68rem;
+      color: var(--border-hover);
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .slide-screen-number {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.05);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-family: var(--font-mono);
+    }
+
+    .slide-screen-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    }
+
+    .slide-screen-graphic {
+      background: rgba(2, 5, 10, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 2rem;
+      font-size: 0.88rem;
+      color: var(--success);
+      font-family: var(--font-mono);
+      box-shadow: 0 0 20px rgba(0, 230, 118, 0.08);
+      max-width: 90%;
+    }
+
+    .slide-details {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      background: rgba(17, 22, 32, 0.5);
+    }
+
+    .slide-detail-section {
+      margin-bottom: 1rem;
+    }
+
+    .slide-detail-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .slide-detail-content {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .highlight-box {
+      background: rgba(0, 230, 118, 0.05);
+      border-left: 3px solid var(--success);
+      padding: 0.75rem 1rem;
+      border-radius: 0 6px 6px 0;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #90caf9;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="brand">
+      <span class="brand-icon">🌿</span>
+      <span class="brand-text">EcoTrust AI v2.0</span>
+    </div>
+    
+    <ul class="nav-list">
+      <li class="nav-item active" data-tab="tab-overview">
+        <button>🏠 專題主頁 (Overview)</button>
+      </li>
+      <li class="nav-item" data-tab="tab-architecture">
+        <button>⚙️ 系統架構 (Architecture)</button>
+      </li>
+      <li class="nav-item" data-tab="tab-preprocessing">
+        <button>📁 數據預處理 (Data Pipeline)</button>
+      </li>
+      <li class="nav-item" data-tab="tab-chatbot">
+        <button>💬 AI 顧問代理人 (RAG Agent)</button>
+      </li>
+      <li class="nav-item" data-tab="tab-algorithms">
+        <button>🧠 核心演算法 (Algorithms)</button>
+      </li>
+      <li class="nav-item" data-tab="tab-db">
+        <button>📊 資料庫設計 (DB Schema)</button>
+      </li>
+      <li class="nav-item" data-tab="tab-slides">
+        <button>📰 簡報投影片 (Pitch Deck)</button>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <p>專題發表與論文參考系統</p>
+      <p style="margin-top: 4px; font-weight: 700;">v2.0 • 2026</p>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+    
+    <!-- 1. OVERVIEW -->
+    <section id="tab-overview" class="active">
+      <h1>雙引擎企業永續評估與核實平台</h1>
+      <div class="section-subtitle">
+        <span class="badge-cyber">專題簡介</span>
+        <span>Empowering Sustainable Audits with AI and RAG Technology</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">💡 專題核心精神與研究背景</div>
+        <p style="line-height: 1.7; margin-bottom: 1rem;">
+          在目前永續金融與企業合規的趨勢下，資訊的揭露品質與真實性成了關鍵。傳統 ESG 查核極度依賴企業的質性宣告，導致審計程序耗時且極難核對。
+        </p>
+        <p style="line-height: 1.7; margin-bottom: 1.5rem;">
+          本專題開發的 <strong>EcoTrust AI v2.0</strong> 平台，首創將<b>財務獲利硬指標 (ROE)</b> 與由 AI 模型提取分析的<b>永續承諾信心得分 (Confidence Score)</b> 進行雙引擎融合。透過「去碳排化」的文本實質性審計，評估其永續申報的資訊透明度與數據具體度，解決生成式 AI 用於嚴謹財務審計時易產生的胡言亂語（幻覺）痛點，建立具備高度可信度的審計軌跡。
+        </p>
+
+        <div class="feature-grid">
+          <div class="feature-item">
+            <div class="fi-title">🔬 去碳排化文本審計</div>
+            <div class="fi-desc">不依賴企業自主申報的排放數據，而是分析文本的數字密度、指標多樣性與承諾品質，量化其揭露誠信度。</div>
+          </div>
+          <div class="feature-item">
+            <div class="fi-title">📊 雙引擎交叉象限</div>
+            <div class="fi-desc">整合 MariaDB 財務季度數據與 ESG 信心分數，進行 2D 走勢氣泡分析，直觀揭示企業永續轉型的實質成效。</div>
+          </div>
+          <div class="feature-item">
+            <div class="fi-title">⚡ 頁碼感知 RAG 顧問</div>
+            <div class="fi-desc">自研 Bigram 分詞與頁面命中計分，對接本地 Qwen2.5:7b，生成之論點均能追溯原始 PDF 頁碼。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card success-card">
+        <div class="card-title">🚀 專題發表四大技術亮點</div>
+        <div class="feature-grid">
+          <div class="feature-item">
+            <div class="fi-title">1. Smart Chunking 智慧切片</div>
+            <div class="fi-desc">優先選取報告書中含有第三方驗證與 ISO 等「硬指標」段落，並結合等距採樣，代表全文送入 FinBERT 推理。</div>
+          </div>
+          <div class="feature-item">
+            <div class="fi-title">2. Gen-2 承諾生命週期提取</div>
+            <div class="fi-desc">使用正則表達式自動辨識並分類出具備「量化數據」與「明確時限」的高信度承諾，作為實質核對的核心點。</div>
+          </div>
+          <div class="feature-item">
+            <div class="fi-title">3. RSS 背景輿情驗證機制</div>
+            <div class="fi-desc">針對提取的高信度承諾，在背景自動生成檢索詞爬取 Google News 進行情緒標記，提供市場對永續行為的實質回饋。</div>
+          </div>
+          <div class="feature-item">
+            <div class="fi-title">4. 雙向網頁 PDF.js 動態跳頁</div>
+            <div class="fi-desc">用戶在 RAG 面板點擊引用標籤 📄 [p.X]，右側 PDF 視窗即秒級跳轉至原文該頁，實現所答即所見。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. ARCHITECTURE -->
+    <section id="tab-architecture">
+      <h1>系統整體架構與技術棧</h1>
+      <div class="section-subtitle">
+        <span class="badge-cyber">架構設計</span>
+        <span>Heterogeneous System Architecture & Dataflow Diagram</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚙️ 系統資料流與功能架構圖</div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+          以下流程圖清晰展示了系統從輸入、分析、儲存、輿情驗證到 RAG AI 智能顧問推理的完整資料通路，未經打碎段落的向量庫，而是全程以「頁面」與「關聯式 Fact」為中心。
+        </p>
+        <div class="mermaid-box">
+          <div class="mermaid">
+            flowchart TD
+                subgraph Input[1. 資料輸入與前置處理]
+                    A1[上傳 ESG 報告 PDF] --> A2{檔名解析與重複偵測}
+                    A2 -- 重複且確認覆寫 --> A3[刪除舊資料並重新分析]
+                    A2 -- 通過 --> A4[ESG 報告驗證門檻 Gate]
+                    A4 -- 關鍵字不足 --> A5[判定為非ESG報告並中止]
+                end
+
+                subgraph Analytics[2. 核心數據分析引擎 - Python]
+                    A4 -- 驗證通過 --> B1[pdf_page_indexer.py]
+                    B1 --> B2[建立頁碼索引 JSON]
+                    
+                    A4 -- 驗證通過 --> B3[finbert.py 數據挖掘]
+                    B3 --> B4[智慧採樣切片 Smart Chunks]
+                    B4 --> B5[FinBERT 情感意圖分析]
+                    B3 --> B6[數字密度與 KPI 多樣性計算]
+                    B3 --> B7[Gen-2 承諾提取與信度等級分類]
+                end
+
+                subgraph Storage[3. 資料庫儲存與背景驗證]
+                    B2 --> C1[(MariaDB: test2 資料庫)]
+                    B5 --> C1
+                    B6 --> C1
+                    B7 --> C1
+                    
+                    C1 --> C2[PHP 背景觸發: background_fetch_news.php]
+                    C2 --> C3[news_nlp.py 網路爬蟲]
+                    C3 --> C4[Google News RSS 搜尋]
+                    C4 --> C5[情感詞典 + FinBERT 情感標註]
+                    C5 --> C1
+                end
+
+                subgraph RAG[4. RAG 智能顧問問答系統]
+                    D1[使用者提問] --> D2[chat_api.php]
+                    C1 --> D2
+                    D2 --> D3[中文分詞與 Bigram 提取]
+                    D3 --> D4[頁面詞頻命中評分]
+                    D4 --> D5[篩選 Top 40 頁面並依頁碼遞增排序]
+                    D5 --> D6[多源 Prompt 融合與剛性引用注入]
+                    D6 --> D7[呼叫本地 Ollama: qwen2.5:7b]
+                    D7 --> D8[生成附帶頁碼標註之回覆]
+                    D8 --> D9[前端介面：點擊標籤動態跳轉 PDF 頁面]
+                end
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PREPROCESSING -->
+    <section id="tab-preprocessing">
+      <h1>數據預處理管道 (Data Pre-processing)</h1>
+      <div class="section-subtitle">
+        <span class="badge-cyber">預處理設計</span>
+        <span>Reducing Context Load & Enhancing Cross-Company Comparison efficiency</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📑 1. 單公司：PDF 頁碼解構索引化</div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          為了使 RAG 能夠精確引述頁碼，我們拋棄了傳統的向量數據分片做法，而在預處理段使用 Python 的 <code>pdfplumber</code> 模組將報告文本按真實頁碼存成輕量化的頁面 JSON：
+        </p>
+        <pre><button class="copy-btn" onclick="copyCode(this)">複製代碼</button><code># pdf_page_indexer.py 核心預處理邏輯
+with pdfplumber.open(pdf_path) as pdf:
+    pages_list = []
+    for idx, page in enumerate(pdf.pages):
+        text = page.extract_text()
+        pages_list.append({
+            "page": idx + 1,
+            "text": text if text else ""
+        })
+    json.dump({"source_pdf": pdf_name, "pages": pages_list}, out_file)</code></pre>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 2. 跨公司：數據庫 Facts 壓縮與對齊</div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          跨公司對比的關鍵在於<b>不讓 LLM 閱讀數萬頁 PDF</b>，而是使用預處理將 MariaDB 中的結構化 Facts（包含歷年 ROE、碳排放信心得分、量化承諾率、新聞情緒指標）導出成一份幾千字的 Markdown 對照報告（如 <code>cross_company_analysis_report.md</code>）。
+        </p>
+        <div class="highlight-box">
+          <strong>技術優勢：</strong> 由於將大量 PDF 資訊預先提煉為結構化 Facts 報告，LLM 可以在不到 8,000 Tokens 的 Context 開銷下，直接執行多維度邏輯推理，絕不超載，杜絕了胡言亂語的發生。
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. CHATBOT / AI AGENT -->
+    <section id="tab-chatbot">
+      <h1>頁碼感知 RAG 智能顧問代理人 (AI Agent)</h1>
+      <div class="section-subtitle">
+        <span class="badge-cyber">技術核心</span>
+        <span>Page-Aware Retrieval, Multi-Source Facts Fusion & Live PDF Jumping</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔍 1. 自適應中文 Bigram 滑動分詞器</div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          在後端 PHP 環境中，我們自研了 Bigram 滑動分詞器（N-gram），搭配 ESG 行業領域字典與停用詞過濾，能從使用者問題中精準定位特徵詞，相容性高於一般向量庫：
+        </p>
+        <pre><button class="copy-btn" onclick="copyCode(this)">複製代碼</button><code>// chat_api.php 雙字滑動分詞核心代碼
+$len = mb_strlen($cleanSegment, 'UTF-8');
+for ($i = 0; $i < $len - 1; $i++) {
+    $bigram = mb_substr($cleanSegment, $i, 2, 'UTF-8');
+    if (preg_match('/[\x{4e00}-\x{9fa5}a-z0-9]/u', $bigram)) {
+        $keywords[] = $bigram; // 產生雙字滑動詞
+    }
+}</code></pre>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚙️ 2. 頁面評分重排與邏輯順序重組</div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          系統會加總所有特徵詞在各頁出現的詞頻，篩選出相關性最高的前 40 頁。為防止上下文段落被打亂，<b>我們依據物理頁碼由小到大重新排序頁面</b>，確保閱讀順序前後連貫：
+        </p>
+        <pre><button class="copy-btn" onclick="copyCode(this)">複製代碼</button><code>// 頁面依頁碼由小到大重新排序，保持邏輯前後連貫
+usort($selected, function($a, $b) { return $a['page'] - $b['page']; });</code></pre>
+      </div>
+
+      <div class="card success-card">
+        <div class="card-title">🔗 3. 剛性引用機制與 PDF.js 前端雙向跳頁</div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          RAG 顧問的 System Prompt 中寫入了不可違背的「來源標註鐵律」，並在前端利用正則表達式，將 LLM 生成的 `[p.X]` 標籤渲染為特殊的 HTML 跳轉事件：
+        </p>
+        <pre><button class="copy-btn" onclick="copyCode(this)">複製代碼</button><code>// 前端點擊 p.X 秒級跳頁核心邏輯
+$(document).on('click', '.page-citation', function(e) {
+    e.preventDefault();
+    const pageNum = parseInt($(this).data('page'));
+    
+    // 開啟右側隱藏的 PDF 面板，調用 PDF.js 渲染對應頁面
+    $('#pdfPanel').addClass('visible');
+    $('#chatPanel').addClass('with-pdf');
+    jumpToPDFPage(pageNum); 
+});</code></pre>
+      </div>
+    </section>
+
+    <!-- 5. ALGORITHMS -->
+    <section id="tab-algorithms">
+      <h1>核心評分演算法與 LaTeX 公式庫</h1>
+      <div class="section-subtitle">
+        <span class="badge-cyber">演算法設計</span>
+        <span>Mathematical Scoring Models for Corporate Transparency Audits</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🧠 1. 意圖強度得分 (Intent Strength Score, $I$)</div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          使用本地部署的 FinBERT 中文情感模型，針對 100 個智慧切片 Chunk 進行積極機率與消極機率推理。單句 Chunk 得分公式如下：
+        </p>
+        <div class="math-block">
+          $$S_{\text{chunk}, i} = \frac{P(\text{Positive}_i) - P(\text{Negative}_i) + 1}{2}$$
+        </div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          將 100 個 Chunks 的得分求算術平均，即為企業的**意圖強度得分 ($I$)**：
+        </p>
+        <div class="math-block">
+          $$I = \frac{1}{N} \sum_{i=1}^{N} S_{\text{chunk}, i} \quad (N \le 100)$$
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚖️ 2. 誠信可靠性指數 (Credibility Index, $C$)</div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          依據數字密度與 ESG 關鍵指標豐富度兩個歸一化指標加權計算：
+        </p>
+        <div class="math-block">
+          $$N_{\text{norm}} = \min\left(1.0, \frac{N_s}{0.20} \times 1.5\right)$$
+        </div>
+        <div class="math-block">
+          $$K_{\text{norm}} = \min\left(1.0, \sqrt{\frac{K_c}{15}}\right)$$
+        </div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          加權得到**可靠性指數 ($C$)**：
+        </p>
+        <div class="math-block">
+          $$C = (W_{\text{numeracy}} \cdot N_{\text{norm}}) + (W_{\text{kpi}} \cdot K_{\text{norm}})$$
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem;">
+          *(系統預設權重：數字密度子權重 $W_{\text{numeracy}} = 0.45$，關鍵指標子權重 $W_{\text{kpi}} = 0.35$)*
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🛡️ 3. 原始總分與 Sigmoid 對比度增強</div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          結合意圖分、可靠性指數與外部輿情風險值 ($R_e$)，求得原始總分 $S_{\text{raw}}$：
+        </p>
+        <div class="math-block">
+          $$S_{\text{raw}} = (I \cdot W_{\text{INTENT}}) + (C \cdot W_{\text{CREDIBILITY}}) + \left[\left(1 - \frac{R_e}{100}\right) \cdot W_{\text{RISK}}\right]$$
+        </div>
+        <p style="line-height: 1.6; margin-bottom: 1rem;">
+          為拉開不同揭露品質企業在 2D 圖表上的差距，使用 <b>Sigmoid 對比度拉伸</b> 作為最終誠信信心得分 $Y$（中心點 0.5，斜率 10）：
+        </p>
+        <div class="math-block">
+          $$Y = \frac{1}{1 + e^{-10 \cdot (S_{\text{raw}} - 0.5)}}$$
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. DB SCHEMA -->
+    <section id="tab-db">
+      <h1>資料庫 Schema 設計 (MariaDB)</h1>
+      <div class="section-subtitle">
+        <span class="badge-cyber">資料庫設計</span>
+        <span>MariaDB Tables, Data Types and Relationships</span>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🗄️ 1. 碳排放與 ESG 信心分析表 (`carbon_emissions`)</div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          這是評分引擎的主要儲存表，用以紀錄 FinBERT 解析後的各項量化指標與高信度承諾列表：
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>欄位名稱 (Field)</th>
+              <th>資料類型 (Type)</th>
+              <th>鍵值 (Key)</th>
+              <th>欄位說明 (Description)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td>int(11)</td>
+              <td>PRIMARY KEY (AI)</td>
+              <td>主鍵流水號</td>
+            </tr>
+            <tr>
+              <td><code>company_id</code></td>
+              <td>int(11)</td>
+              <td>FOREIGN KEY</td>
+              <td>公司股票代號 (關聯 companies.symbol)</td>
+            </tr>
+            <tr>
+              <td><code>year</code></td>
+              <td>int(4)</td>
+              <td>INDEX</td>
+              <td>報告發布年份</td>
+            </tr>
+            <tr>
+              <td><code>confidence_score</code></td>
+              <td>double</td>
+              <td>-</td>
+              <td>最終信心得分 (Y軸, Sigmoid 映射值)</td>
+            </tr>
+            <tr>
+              <td><code>intent_score</code></td>
+              <td>float</td>
+              <td>-</td>
+              <td>FinBERT 積極意圖分數 ($I$)</td>
+            </tr>
+            <tr>
+              <td><code>credibility_index</code></td>
+              <td>float</td>
+              <td>-</td>
+              <td>誠信可靠性指數 ($C$)</td>
+            </tr>
+            <tr>
+              <td><code>numeracy_score</code></td>
+              <td>float</td>
+              <td>-</td>
+              <td>分詞後的數字密度</td>
+            </tr>
+            <tr>
+              <td><code>kpi_count</code></td>
+              <td>int(11)</td>
+              <td>-</td>
+              <td>ESG 關鍵名詞命中總數</td>
+            </tr>
+            <tr>
+              <td><code>total_promises</code></td>
+              <td>int(11)</td>
+              <td>-</td>
+              <td>報告提取之總承諾數</td>
+            </tr>
+            <tr>
+              <td><code>quant_rate</code></td>
+              <td>float</td>
+              <td>-</td>
+              <td>具量化數據之承諾率</td>
+            </tr>
+            <tr>
+              <td><code>timeframe_rate</code></td>
+              <td>float</td>
+              <td>-</td>
+              <td>具明確時限之承諾率</td>
+            </tr>
+            <tr>
+              <td><code>high_confidence_commitments</code></td>
+              <td>longtext (JSON)</td>
+              <td>-</td>
+              <td>高信度承諾條目與原文 JSON</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📰 2. 輿情新聞表 (`news`)</div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          儲存與企業相關之外部 ESG 輿情新聞，用以和企業永續申報承諾進行交叉核對：
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>欄位名稱 (Field)</th>
+              <th>資料類型 (Type)</th>
+              <th>說明 (Description)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>id</code></td>
+              <td>int(11)</td>
+              <td>主鍵流水號</td>
+            </tr>
+            <tr>
+              <td><code>company_symbol</code></td>
+              <td>int(11)</td>
+              <td>公司股票代碼 (外鍵)</td>
+            </tr>
+            <tr>
+              <td><code>title</code></td>
+              <td>varchar(1000)</td>
+              <td>新聞標題</td>
+            </tr>
+            <tr>
+              <td><code>link</code></td>
+              <td>varchar(1000)</td>
+              <td>新聞來源 URL</td>
+            </tr>
+            <tr>
+              <td><code>sentiment</code></td>
+              <td>varchar(50)</td>
+              <td>情感判定結果 (Positive / Neutral / Negative)</td>
+            </tr>
+            <tr>
+              <td><code>confidence</code></td>
+              <td>double</td>
+              <td>情感分析置信度 (0.0 - 1.0)</td>
+            </tr>
+            <tr>
+              <td><code>action_context</code></td>
+              <td>varchar(500)</td>
+              <td>若為承諾驗證，指向該承諾文本摘要</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 7. SLIDES PLAYER -->
+    <section id="tab-slides">
+      <h1>專題簡報投影片大綱與發表口白 (Pitch Deck)</h1>
+      <div class="section-subtitle">
+        <span class="badge-cyber">簡報大綱</span>
+        <span>Interactive Slide Deck & Speech Script Guide</span>
+      </div>
+
+      <div class="slide-player">
+        <!-- Slide List -->
+        <div class="slide-sidebar">
+          <div class="slide-sidebar-header">
+            <span>🗂️ 簡報頁面目錄</span>
+            <small id="slideIndexText">1 / 15</small>
+          </div>
+          <ul class="slide-list" id="slideListContainer">
+            <!-- Rendered by JS -->
+          </ul>
+        </div>
+
+        <!-- Slide Body -->
+        <div class="slide-body">
+          <!-- Screen representation -->
+          <div class="slide-screen">
+            <div class="slide-screen-watermark">ECOTRUST AI v2.0</div>
+            <div class="slide-screen-number" id="screenNumber">P.01</div>
+            <div class="slide-screen-title" id="screenTitle">載入中...</div>
+            <div class="slide-screen-graphic" id="screenGraphic">Glow Graphic Panel</div>
+          </div>
+
+          <!-- Slide Meta Details -->
+          <div class="slide-details">
+            <div class="slide-detail-section">
+              <div class="slide-detail-label">🎯 本頁簡報重點 (Slides Focus)</div>
+              <div class="slide-detail-content" id="slideFocus">對應重點內容...</div>
+            </div>
+            <div class="slide-detail-section">
+              <div class="slide-detail-label">🗣️ 發表講稿口白 (Speech Script)</div>
+              <div class="slide-detail-content" id="slideSpeech" style="color: #64b5f6; font-style: italic;">講稿...</div>
+            </div>
+            <div class="slide-detail-section">
+              <div class="slide-detail-label">💡 專題問答亮點 (Q&A Tip)</div>
+              <div class="slide-detail-content highlight-box" id="slideTip">問答建議...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Tab switching logic
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+        
+        item.classList.add('active');
+        const targetTab = item.getAttribute('data-tab');
+        document.getElementById(targetTab).classList.add('active');
+        
+        // Relayout mermaid when shown
+        if (targetTab === 'tab-architecture') {
+          mermaid.contentLoaded();
+        }
+      });
+    });
+
+    // Code copy helper
+    function copyCode(btn) {
+      const code = btn.nextElementSibling.innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const origText = btn.innerText;
+        btn.innerText = '已複製!';
+        setTimeout(() => { btn.innerText = origText; }, 2000);
+      });
+    }
+
+    // Slides Content Database
+    const slidesData = [
+      {
+        id: 1,
+        title: "雙引擎企業永續評估與核實平台",
+        graphic: "SYSTEM COVER • ECOTRUST AI v2.0\n--------------------------------\n[ 財務 (ROE) ]  ✖  [ 永續信心分 ]",
+        focus: "高科技深色主題封面，強調雙引擎與去碳排化文本審計特點。",
+        speech: "各位評審委員好，我們的專題題目是『EcoTrust AI v2.0』。這是一個結合金融財務硬指標與 ESG 申報誠信度，旨在提升永續報告披露實質性、協助客觀審計的雙引擎評估與核實平台。",
+        tip: "若評審問到專題與一般ESG系統有何不同，要強調我們是從「申報誠信度與數據實質性」切入，而非直接代入申報碳排量。"
+      },
+      {
+        id: 2,
+        title: "研究動機與產業痛點",
+        graphic: "宣傳型永續報告書 (文字敘述多)\n          VS\n實質數據查核 (難以核對, 缺乏工具)",
+        focus: "說明企業 ESG 申報中質性揭露過多，且缺乏客觀、自動化審計工具核對的產業現狀。",
+        speech: "目前企業 ESG 評估最大的挑戰在於資訊透明度與查核成本。企業的報告書往往偏重質性修飾，缺乏自動化的量化審計工具。投資人與監管機構極難低成本、高效率地驗證這些承諾的具體落實進度與數據實質性。",
+        tip: "可用「公關修辭」過多來形容當前申報現狀，強調我們系統是為了提供具體的、數據化的客觀衡量工具。"
+      },
+      {
+        id: 3,
+        title: "傳統大語言模型 (LLM) 用於審計的瓶頸",
+        graphic: "1. 超長文本超載 (Context limit)\n2. 數據幻覺 (Hallucination)\n3. 頁碼遺失 (No Audit Trail)",
+        focus: "指出將大報告直接輸入 LLM 的三大問題，帶出我們自研「頁碼感知 RAG」的必要性。",
+        speech: "若直接將報告書交給大語言模型問答，會面臨三大技術瓶頸：超長文本超出 Context 限制、模型捏造事實（產生數據幻覺），以及缺乏頁碼定位，使回答無法被審計查核。這在嚴謹的財務與永續評估上是無法被核實與接受的。",
+        tip: "強調「審計軌跡 (Audit Trail)」是金融領域的核心，也是傳統 LLM 面板最欠缺的剛性需求。"
+      },
+      {
+        id: 4,
+        title: "系統整體架構與資料流",
+        graphic: "上傳 PDF -> Python (FinBERT) -> MariaDB\n -> 背景爬蟲 (News) -> PHP (RAG) -> LLM",
+        focus: "說明 B/S 架構與 Python (FinBERT) 數據挖掘、Ollama (Qwen2.5) RAG 問答的協同運作。",
+        speech: "為此，我們設計了 EcoTrust AI。系統包含四個核心階段：從前端上傳 PDF 開始，後端以 Python 進行智慧切片與 FinBERT 評分，隨後存入 MariaDB 資料庫；背景會自動抓取新聞進行輿情交叉驗證；最後，我們設計了『頁碼感知 RAG 智能顧問』提供無幻覺的對話查核。",
+        tip: "強調這是一個異構系統（PHP + Python），各自發揮擅長的 Web 路由管理與高效 AI 模型推理效能。"
+      },
+      {
+        id: 5,
+        title: "技術亮點一：永續揭露誠信度評分演算法",
+        graphic: "S_raw = Intent + Credibility + (1 - Risk)\nSigmoid Stretch: Y = 1 / (1 + e^-10(S_raw-0.5))",
+        focus: "展示數字密度、KPI多樣性以及 Sigmoid 對比度拉伸公式。",
+        speech: "我們設計了一套客觀的文本實質性評估模型。評估指標包含分詞後的『數字密度』與『KPI多樣性』。為了防止分數在中段過度飽和，我們引入了 Sigmoid 函數進行對比度增強，使高揭露品質的企業與質性描述偏高的企業在分數上產生清晰的梯度。",
+        tip: "Sigmoid 對比度增強能有效將好公司與待優化公司在 2D 圖上拉開，是讓視覺圖表更具辨識度的關鍵演算法。"
+      },
+      {
+        id: 6,
+        title: "技術亮點二：Gen-2 承諾提取引擎",
+        graphic: "PROMISE = Verb + [Quantified Value] + [Timeframe]\n---> [HIGH / MED / LOW] Confidence Levels",
+        focus: "解釋量化模式與時限模式的正則表達式匹配，以及三級信度分類。",
+        speech: "在 Gen-2 引擎中，我們利用 NLP 技術遍歷報告書的所有句子，尋找承諾動詞。並透過正則表達式，檢索句子是否同時具備『量化數據』與『明確時限』。若兩者皆備，判定為『HIGH 高信度承諾』，作為後續追蹤的硬性查核點。",
+        tip: "量化承諾率與時限承諾率是用來評估報告書「實質性」的重要底層特徵指標。"
+      },
+      {
+        id: 7,
+        title: "背景新聞輿情交叉驗證",
+        graphic: "高信度承諾特徵詞 -> Google News RSS 搜尋\n  -> 情緒標記 -> 計算外部風險值 (Re)",
+        focus: "展示背景新聞抓取流程與情緒雙軌標記技術。",
+        speech: "為驗證承諾的落實度，系統會針對提取出的高信度承諾，自動提煉特徵詞，於背景向 Google News RSS 搜尋對應年份的新聞。抓取新聞後進行情感分析，提供市場對該公司永續作為的外部評價與回饋。",
+        tip: "此處使用了「本地情感詞典 + FinBERT 批次精修」雙軌標記，大幅度提高了情緒判定的精確度。"
+      },
+      {
+        id: 8,
+        title: "數據預處理管道 (Data Pre-processing)",
+        graphic: "1. pdf_page_indexer.py ---> pages.json (保留物理頁碼)\n2. Database Aggregator ---> cross_company_analysis_report.md",
+        focus: "說明單公司 JSON 頁碼拆解與跨公司 Markdown 壓縮預處理如何有效節省 Context 載量。",
+        speech: "在 RAG 運作之前，我們執行了兩項重要的數據預處理。首先，我們將 PDF 按真實頁面拆解成 JSON 格式，完整保留了物理頁碼。其次，為了實現跨公司對比且不超出 Token 限制，我們將資料庫的硬指標 Facts 預先整理成一份精簡的跨公司報告。這讓 LLM 能夠以極低的運算成本執行多維度對照。",
+        tip: "這是消除幻覺的雙重保險，先簡化、後定位，確保 RAG 面板在高載量下依然能秒級回應且不胡言亂語。"
+      },
+      {
+        id: 9,
+        title: "技術天花板：頁碼感知 RAG 智能顧問代理人",
+        graphic: "提問 -> Bigram 分詞 -> 頁面詞頻命中評分\n  -> Top 40 頁按頁碼遞增重排 -> Prompt 注入",
+        focus: "深入剖析分詞、相關性計分與頁碼 Chronological Coherence 排序。",
+        speech: "本專題最核心的部分是這個 RAG 智能顧問代理人。我們棄用了會打碎段落的向量資料庫，而是自行開發中文 Bigram 分詞器，並對報告的『整頁文字』進行命中率評分，篩選出最相關的前 40 頁。並且，我們在輸入 LLM 之前，會依真實頁碼由小到大重新排序，確保上下文閱讀順序的連貫性。",
+        tip: "評審如果問為什麼不用 Pinecone/Chroma，回答是向量庫的 chunk 切片會徹底打亂頁碼與前後段落結構，導致無法回溯原文頁面。"
+      },
+      {
+        id: 10,
+        title: "剛性引用機制與 PDF.js 動態連動",
+        graphic: "LLM 回覆 [p.X] ---> 點擊連結 ---> PDF.js 跳頁\n(所答即所見，剛性事實審計對齊)",
+        focus: "說明 Web 前端正則渲染與 PDF.js 視窗連動的核心 JS 技術。",
+        speech: "這是我們的 Live Demo 重點。我們在 Prompt 中寫入了剛性引用鐵律，迫使 LLM 回答時必須在句尾加上 `[p.頁碼]`。當用戶點擊這個連結，前端會調用 PDF.js API，讓右側原文視窗自動跳轉並滾動到那一個頁面。這解決了 AI 幻覺問題，讓審計師能一秒對齊原文事實。",
+        tip: "這是在現場展示中最能加分的功能，點擊即可實現網頁雙向跳頁，視覺衝擊力極強。"
+      },
+      {
+        id: 11,
+        title: "系統演示一：數據管理與審計報告",
+        graphic: "數據列表 (信心/ROE) ---> 診斷報告 (半圓Gauge, 雷達圖)\n管理者手動覆寫修正 score & comment",
+        focus: "展示 PHP 首頁管理中心與 audit_report.php 頁面的視覺設計。",
+        speech: "這是系統的數據管理中心。上傳 PDF 後，進度條會呈現 JARVIS 風格的流體掃描動畫。分析完成後，系統會生成 ESG 診斷報告，直觀呈現意圖分數、數字密度及雷達圖，管理者還能在此手動覆寫信心分數並寫入備忘錄。",
+        tip: "提到雷達圖是用 Plotly.js 生成的，展示了高度互動式的資料視覺化技術。"
+      },
+      {
+        id: 12,
+        title: "系統演示二：2D 氣泡走勢分析",
+        graphic: "X軸: 年份 | Y軸: 信心得分 | 氣泡大小: ROE%\n橘紅色標記: 獲利領先/承諾精進警告",
+        focus: "說明 2D 氣泡圖所反映的多維度風險篩選策略。",
+        speech: "這是我們的 ESG 走勢氣泡分析網頁。我們將年份、誠信分與 ROE 整合在同一個 2D 氣泡圖中。當某家公司帳面 ROE 達標，但誠信分低於我們設定的閾值時，系統會自動在氣泡旁拉出『⚠️ 獲利領先/承諾精進』的黃橘色警示，提醒投資人注意其量化揭露完整度。",
+        tip: "多維度氣泡圖非常適合用來做投資決策與永續透明度交叉核對。"
+      },
+      {
+        id: 13,
+        title: "系統演示三：新聞監察與交叉驗證",
+        graphic: "圓餅圖 (Positive / Neutral / Negative)\n月分組新聞卡片 (邊框情緒對應顏色)",
+        focus: "說明 news.php 頁面如何將背景抓取的新聞進行分類與呈現。",
+        speech: "這是新聞監察中心。在這裡，使用者可以輸入公司代碼，系統會以 Plotly 呈現整體新聞的情緒分佈。所有背景抓取到的輿情新聞會按年份與月份降序分組，並以紅綠色標記正面與負面新聞，提供清晰的外部輿情核對路徑。",
+        tip: "新聞分類是用年份與月份分組排序，確保最新的新聞一定出現在最頂部。"
+      },
+      {
+        id: 14,
+        title: "系統核心價值與專題貢獻",
+        graphic: "1. 誠信揭露檢驗  2. 頁面級無幻覺 RAG  3. 財務永續交叉決策",
+        focus: "總結專題的三大價值，拉高專題的學術與實用高度。",
+        speech: "總結來說，本專題的學術與應用價值在於：第一，我們成功建立了『去碳排化』的誠信評級模型，客觀呈現申報資訊品質；第二，我們研發的頁碼感知 RAG 技術，為生成式 AI 在嚴謹審計領域的應用，開創了一套可追溯原文的全新技術路徑。",
+        tip: "最後結尾時，眼神要自信，語調要堅定，呈現出本專題對企業永續發展查核的實質貢獻。"
+      },
+      {
+        id: 15,
+        title: "Q&A 與致謝",
+        graphic: "EcoTrust AI v2.0\n謝謝指教 • 敬請指正",
+        focus: "結束畫面，留有發表致謝詞，準備回答評審問題。",
+        speech: "以上是我們 EcoTrust AI 專題系統的完整技術報告。我們希望能用 AI 的力量，建立一個更透明、更可被客觀審計的永續金融生態系。謝謝各位評審委員，請委員指導。",
+        tip: "保持微笑，大方接受提問，任何問題都可以導回我們的前端跳頁 RAG 或是 FinBERT 計算模型上回答。"
+      }
+    ];
+
+    // Render slides sidebar
+    const container = document.getElementById('slideListContainer');
+    slidesData.forEach((s, index) => {
+      const li = document.createElement('li');
+      li.className = `slide-list-item ${index === 0 ? 'active' : ''}`;
+      li.id = `slide-li-${s.id}`;
+      li.innerHTML = `<button onclick="playSlide(${s.id})">${String(s.id).padStart(2, '0')}. ${s.title}</button>`;
+      container.appendChild(li);
+    });
+
+    // Play slide function
+    function playSlide(id) {
+      const s = slidesData.find(x => x.id === id);
+      if (!s) return;
+
+      // Update active nav state
+      document.querySelectorAll('.slide-list-item').forEach(li => li.classList.remove('active'));
+      document.getElementById(`slide-li-${id}`).classList.add('active');
+
+      // Update screen representation
+      document.getElementById('screenNumber').innerText = `P.${String(s.id).padStart(2, '0')}`;
+      document.getElementById('screenTitle').innerText = s.title;
+      document.getElementById('screenGraphic').innerHTML = s.graphic.replace(/\n/g, '<br>');
+      document.getElementById('slideIndexText').innerText = `${s.id} / 15`;
+
+      // Update details
+      document.getElementById('slideFocus').innerText = s.focus;
+      document.getElementById('slideSpeech').innerText = s.speech;
+      document.getElementById('slideTip').innerText = s.tip;
+    }
+
+    // Init first slide
+    playSlide(1);
+  </script>
+</body>
+</html>

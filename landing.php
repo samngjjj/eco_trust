@@ -13,958 +13,1238 @@ if (!empty($_SESSION['user'])) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Eco Trust AI — ESG 永續誠信分析平台</title>
-  <meta name="description" content="Eco Trust AI 以 FinBERT AI 技術驅動的 ESG 永續誠信分析平台，自動解析企業永續報告並產生信心評分。">
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap"
-    rel="stylesheet">
+  <meta name="description" content="Eco Trust AI 以 FinBERT 深度學習與頁碼感知 RAG 技術驅動的 ESG 永續誠信分析平台。">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0B0E14;
-      --card: rgba(22, 27, 34, 0.7);
-      --accent: #2979FF;
-      --accent2: #00E676;
-      --text: #e8eaf6;
-      --muted: #8892b0;
-      --border: rgba(108, 99, 255, .2);
-      --border2: rgba(255, 255, 255, .06)
+      --bg: #050505;
+      --surface: rgba(255,255,255,.04);
+      --surface2: rgba(255,255,255,.07);
+      --text: #f5f5f7;
+      --text2: rgba(255,255,255,.65);
+      --text3: rgba(255,255,255,.35);
+      --blue: #2997ff;
+      --purple: #bf5af2;
+      --green: #30d158;
+      --teal: #64d2ff;
+      --orange: #ff9f0a;
+      --pink: #ff375f;
+      --border: rgba(255,255,255,.08);
+      --border2: rgba(255,255,255,.14);
+      --radius: 20px;
+      --font: 'Inter','Noto Sans TC',-apple-system,BlinkMacSystemFont,sans-serif;
+      --ease: cubic-bezier(.25,.1,.25,1);
     }
 
-    *,
-    *::before,
-    *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0
-    }
-
-    html {
-      scroll-behavior: smooth
-    }
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior: smooth; }
 
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', 'Noto Sans TC', sans-serif;
-      font-size: 15px;
+      font-family: var(--font);
+      font-size: 16px;
       line-height: 1.6;
       overflow-x: hidden;
-      background-image: radial-gradient(circle at 15% 50%, rgba(41, 121, 255, .08), transparent 30%), radial-gradient(circle at 85% 30%, rgba(0, 230, 118, .05), transparent 30%)
+      -webkit-font-smoothing: antialiased;
     }
 
-    a {
-      color: var(--accent2);
-      text-decoration: none
-    }
+    a { color: inherit; text-decoration: none; }
 
-    /* ── HUD Background ── */
-    .hud-bg-wrap {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: -1;
-      overflow: hidden;
-      opacity: .8;
-      background-color: #0b0e14;
-      background-image: linear-gradient(rgba(41, 121, 255, .05) 1px, transparent 1px), linear-gradient(90deg, rgba(41, 121, 255, .05) 1px, transparent 1px), linear-gradient(rgba(41, 121, 255, .02) 1px, transparent 1px), linear-gradient(90deg, rgba(41, 121, 255, .02) 1px, transparent 1px);
-      background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px
-    }
-
-    .hud-overlay-wrap {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 9999;
-      overflow: hidden
-    }
-
-    #canvas-top,
-    #canvas-hud {
-      width: 100%;
-      height: 100%;
-      display: block
-    }
-
-    .scanline {
-      position: absolute;
-      width: 100%;
-      height: 2px;
-      background: rgba(41, 121, 255, .1);
-      top: 0;
-      z-index: 10;
-      animation: scanHUD 12s linear infinite;
-      box-shadow: 0 0 12px rgba(41, 121, 255, .2)
-    }
-
-    @keyframes scanHUD {
-      from {
-        top: -2%
-      }
-
-      to {
-        top: 102%
-      }
-    }
-
-    #cursor-outline {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 10000;
-      width: 32px;
-      height: 32px;
-      border: 2px solid #00B0FF;
-      border-radius: 50%;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity .3s, width .3s, height .3s;
-      box-shadow: 0 0 15px rgba(0, 176, 255, .4)
-    }
-
-    .cursor-hover #cursor-outline {
-      width: 48px;
+    /* ═══ NAV ═══ */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       height: 48px;
-      border-color: #00E676;
-      background: rgba(0, 230, 118, .1);
-      box-shadow: 0 0 20px rgba(0, 230, 118, .5)
+      background: rgba(5,5,5,.7);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      transition: background .4s;
     }
-
-    /* ── Top Nav ── */
-    .landing-nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      height: 64px;
-      background: rgba(11, 14, 20, .85);
-      border-bottom: 1px solid rgba(41, 121, 255, .2);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      transition: background .3s
-    }
-
-    .landing-nav.scrolled {
-      background: rgba(11, 14, 20, .95)
-    }
-
+    .nav.scrolled { background: rgba(5,5,5,.92); }
     .nav-inner {
+      max-width: 1080px; margin: 0 auto; padding: 0 22px;
+      height: 100%; display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand { display: flex; align-items: center; gap: .5rem; font-weight: 600; font-size: .95rem; }
+    .nav-brand-dot {
+      width: 24px; height: 24px;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .7rem;
+    }
+    .nav-links { display: flex; align-items: center; gap: 1.8rem; }
+    .nav-links a { font-size: .8rem; color: var(--text2); transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      padding: .35rem 1rem; border-radius: 980px; background: var(--blue);
+      color: #fff !important; font-weight: 500; font-size: .8rem; transition: all .2s var(--ease);
+    }
+    .nav-cta:hover { background: #1a8aff; transform: scale(1.04); }
+
+    /* ═══ HERO ═══ */
+    .hero {
+      position: relative; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 7rem 2rem 5rem; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 500px;
+      background: radial-gradient(ellipse, rgba(41,151,255,.08), rgba(191,90,242,.04) 40%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .hero > *:not(.hero-bg-container) { position: relative; z-index: 2; }
+
+    .hero-bg-container {
+      position: absolute !important;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.95;
+      transform: scale(1);
+      will-change: opacity, transform;
+    }
+
+    .hero-bg-sharp, .hero-bg-blur {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: url('assets/img/hero-bg.png');
+      background-size: cover;
+      background-position: center;
+      pointer-events: none;
+    }
+
+    .hero-bg-sharp {
+      z-index: 1;
+      opacity: 1;
+      will-change: opacity;
+    }
+
+    .hero-bg-blur {
+      z-index: 2;
+      opacity: 0;
+      filter: blur(25px);
+      transform: scale(1.06); /* Prevent edge bleeding from blur */
+      will-change: opacity;
+    }
+
+    .hero-bg-overlay {
+      position: absolute !important;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(to bottom, rgba(5,5,5,0.6) 0%, rgba(5,5,5,0.3) 40%, rgba(5,5,5,0.8) 80%, #050505 100%);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .hero-chip {
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .35rem .9rem; border-radius: 980px;
+      border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.04);
+      font-size: .75rem; font-weight: 500; color: var(--text3); letter-spacing: .04em; margin-bottom: 2rem;
+    }
+    .hero-chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .hero h1 {
+      font-size: clamp(2.6rem, 7vw, 5.2rem); font-weight: 800;
+      line-height: 1.06; letter-spacing: -.045em; margin-bottom: 1.3rem;
+    }
+    .hero h1 .grad {
+      background: linear-gradient(135deg, var(--blue), var(--teal), var(--green));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-sub {
+      font-size: clamp(.95rem, 1.8vw, 1.2rem); color: var(--text2);
+      max-width: 580px; line-height: 1.75; font-weight: 300; margin-bottom: 2.5rem;
+    }
+    .hero-actions { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+    .btn-p {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .8rem 1.8rem; border-radius: 980px; background: var(--blue);
+      color: #fff; font-weight: 600; font-size: .95rem; border: none; cursor: pointer;
+      transition: all .25s var(--ease); box-shadow: 0 2px 16px rgba(41,151,255,.2);
+    }
+    .btn-p:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(41,151,255,.35); }
+    .btn-s {
+      display: inline-flex; align-items: center; gap: .35rem;
+      padding: .8rem 1.5rem; border-radius: 980px; background: transparent;
+      color: var(--blue); font-weight: 500; font-size: .95rem; border: none; cursor: pointer;
+    }
+    .btn-s:hover { color: var(--teal); }
+    .scroll-ind {
+      position: absolute; bottom: 2rem; left: 50%;
+      transform: translate(-50%, 0);
+      display: flex; flex-direction: column; align-items: center; gap: .4rem;
+      z-index: 10;
+    }
+    .scroll-ind span { font-size: .65rem; color: var(--text3); text-transform: uppercase; letter-spacing: .15em; }
+    .scroll-pill {
+      width: 20px; height: 32px; border: 1.5px solid rgba(255,255,255,.18); border-radius: 12px; position: relative;
+    }
+    .scroll-pill::after {
+      content: ''; position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+      width: 2.5px; height: 7px; border-radius: 2px; background: rgba(255,255,255,.35);
+      animation: scrollDot 1.6s ease-in-out infinite;
+    }
+    @keyframes scrollDot {
+      0%,100% { transform: translateX(-50%) translateY(0); opacity:1; }
+      60% { transform: translateX(-50%) translateY(10px); opacity:.2; }
+    }
+    .hero-enter {
+      opacity: 0; transform: translateY(25px);
+      animation: heroIn .85s var(--ease) forwards;
+    }
+    .hero-enter-1 { animation-delay: .15s; }
+    .hero-enter-2 { animation-delay: .3s; }
+    .hero-enter-3 { animation-delay: .45s; }
+    .hero-enter-4 { animation-delay: .6s; }
+
+    .scroll-ind-enter {
+      opacity: 0;
+      transform: translate(-50%, 25px);
+      animation: scrollIndIn .85s var(--ease) forwards;
+      animation-delay: .75s;
+    }
+    @keyframes scrollIndIn {
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    @keyframes heroIn { to { opacity: 1; transform: translateY(0); } }
+
+    /* ═══ TIMELINE ═══ */
+    .timeline-section {
+      position: relative;
+      padding: 6rem 2rem 4rem;
+    }
+
+    .timeline-header {
+      text-align: center;
+      margin-bottom: 5rem;
+    }
+
+    .timeline-header .label {
+      font-size: .72rem; font-weight: 600; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--blue); margin-bottom: .6rem;
+    }
+
+    .timeline-header h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700;
+      letter-spacing: -.035em; line-height: 1.12; margin-bottom: .8rem;
+    }
+
+    .timeline-header p {
+      font-size: 1.05rem; color: var(--text2); max-width: 520px;
+      margin: 0 auto; font-weight: 300; line-height: 1.7;
+    }
+
+    .timeline-wrap {
+      position: relative;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 0 2rem;
-      height: 100%;
+    }
+
+    /* Winding S-curve SVG Track */
+    .timeline-svg {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .timeline-svg-track {
+      stroke: rgba(255, 255, 255, 0.05);
+      stroke-width: 3.5;
+      stroke-dasharray: 6 6;
+    }
+    .timeline-svg-progress {
+      stroke: url(#timelineGrad);
+      stroke-width: 4;
+      stroke-linecap: round;
+      will-change: stroke-dashoffset;
+    }
+
+    /* Each timeline node */
+    .tl-node {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 6.5rem;
+      align-items: center;
+      margin-bottom: 9.5rem;
+      z-index: 2;
+    }
+
+    .tl-node:last-child { margin-bottom: 0; }
+
+    /* Node title/dot inline block */
+    .tl-header-row {
       display: flex;
       align-items: center;
-      justify-content: space-between
+      gap: 1.4rem;
+      margin-bottom: 1.2rem;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      font-weight: 800;
-      font-size: 1.15rem;
-      text-decoration: none;
-      color: var(--text)
-    }
-
-    .brand-text {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 1.5rem
-    }
-
-    .nav-links a {
-      color: var(--muted);
-      font-size: .9rem;
-      font-weight: 500;
-      transition: color .2s
-    }
-
-    .nav-links a:hover {
-      color: var(--text)
-    }
-
-    .btn-login {
-      padding: .55rem 1.4rem;
-      border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff !important;
-      font-weight: 600;
-      font-size: .9rem;
-      transition: all .3s;
-      border: none;
-      cursor: pointer;
-      text-decoration: none;
+    .tl-dot-wrap {
+      position: relative;
       display: inline-flex;
       align-items: center;
-      gap: .4rem
-    }
-
-    .btn-login:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 20px rgba(41, 121, 255, .5);
-      filter: brightness(1.1)
-    }
-
-    /* ── Hero ── */
-    .hero {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
       justify-content: center;
-      text-align: center;
-      padding: 6rem 2rem 4rem;
-      position: relative
+      flex-shrink: 0;
     }
 
-    .hero-content {
-      max-width: 800px;
-      animation: fadeUp .8s ease-out
-    }
-
-    @keyframes fadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px)
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0)
-      }
-    }
-
-    .hero-badge {
-      display: inline-block;
-      padding: .4rem 1rem;
-      border-radius: 20px;
-      background: rgba(41, 121, 255, .12);
-      border: 1px solid rgba(41, 121, 255, .3);
-      color: var(--accent);
-      font-size: .8rem;
-      font-weight: 600;
-      letter-spacing: .05em;
-      margin-bottom: 1.5rem
-    }
-
-    .hero h1 {
-      font-size: 3.2rem;
-      font-weight: 800;
-      line-height: 1.15;
-      margin-bottom: 1.2rem
-    }
-
-    .hero h1 .gradient {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text
-    }
-
-    .hero p {
-      color: var(--muted);
-      font-size: 1.15rem;
-      line-height: 1.8;
-      max-width: 620px;
-      margin: 0 auto 2.5rem
-    }
-
-    .hero-btns {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap
-    }
-
-    .btn-hero {
-      padding: .85rem 2rem;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 1rem;
-      transition: all .3s;
-      cursor: pointer;
-      border: none;
-      text-decoration: none
-    }
-
-    .btn-hero.primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      box-shadow: 0 4px 20px rgba(41, 121, 255, .3)
-    }
-
-    .btn-hero.primary:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 30px rgba(41, 121, 255, .5)
-    }
-
-    .btn-hero.ghost {
-      background: rgba(255, 255, 255, .05);
-      color: var(--text);
-      border: 1px solid var(--border)
-    }
-
-    .btn-hero.ghost:hover {
-      background: rgba(255, 255, 255, .1);
-      border-color: var(--accent)
-    }
-
-    /* ── Orb ── */
-    .hero-orb {
-      width: 100px;
-      height: 100px;
-      margin: 0 auto 2rem;
-      border-radius: 50%;
-      border: 3px solid var(--accent);
-      position: relative;
-      box-shadow: 0 0 30px rgba(41, 121, 255, .3);
-      animation: orbPulse 3s ease-in-out infinite
-    }
-
-    .hero-orb::after {
-      content: '';
-      position: absolute;
-      inset: 8px;
-      border-radius: 50%;
-      border: 2px dashed var(--accent2);
-      animation: spin 6s linear infinite
-    }
-
-    .hero-orb .orb-icon {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.5rem
-    }
-
-    @keyframes orbPulse {
-
-      0%,
-      100% {
-        box-shadow: 0 0 30px rgba(41, 121, 255, .3)
-      }
-
-      50% {
-        box-shadow: 0 0 50px rgba(41, 121, 255, .6)
-      }
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg)
-      }
-    }
-
-    /* ── Sections ── */
-    section {
-      padding: 5rem 2rem
-    }
-
-    .section-inner {
-      max-width: 1100px;
-      margin: 0 auto
-    }
-
-    .section-title {
-      text-align: center;
-      margin-bottom: 3rem
-    }
-
-    .section-title h2 {
-      font-size: 2rem;
-      font-weight: 700;
-      margin-bottom: .5rem
-    }
-
-    .section-title p {
-      color: var(--muted);
-      font-size: 1rem
-    }
-
-    /* ── Features ── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem
-    }
-
-    .feature-card {
-      background: var(--card);
-      border: 1px solid var(--border2);
+    .tl-dot {
+      width: 60px; height: 60px;
       border-radius: 18px;
-      padding: 2rem;
-      backdrop-filter: blur(12px);
-      transition: all .3s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      border: 2px solid rgba(255,255,255,.08);
+      background: var(--bg);
+      transition: all .6s var(--ease);
       position: relative;
-      overflow: hidden
+      z-index: 2;
     }
 
-    .feature-card:hover {
-      border-color: rgba(41, 121, 255, .4);
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, .4)
+    .tl-node.active .tl-dot {
+      border-color: var(--node-color, var(--blue));
+      box-shadow: 0 0 28px color-mix(in srgb, var(--node-color, var(--blue)) 35%, transparent);
     }
 
-    .feature-card::before {
-      content: '';
+    .tl-step {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      opacity: 0;
-      transition: opacity .3s
-    }
-
-    .feature-card:hover::before {
-      opacity: 1
-    }
-
-    .feature-icon {
-      font-size: 2.2rem;
-      margin-bottom: 1rem
-    }
-
-    .feature-card h3 {
-      font-size: 1.1rem;
-      margin-bottom: .5rem;
-      color: var(--text)
-    }
-
-    .feature-card p {
-      color: var(--muted);
-      font-size: .9rem;
-      line-height: 1.6
-    }
-
-    /* ── Pricing ── */
-    #pricing {
-      background: rgba(0, 0, 0, .2)
-    }
-
-    .pricing-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
-      max-width: 1100px;
-      margin: 0 auto
-    }
-
-    .price-card {
-      background: var(--card);
-      border: 1px solid var(--border2);
-      border-radius: 20px;
-      padding: 2.5rem;
-      backdrop-filter: blur(12px);
-      position: relative;
-      transition: all .3s
-    }
-
-    .price-card:hover {
-      transform: translateY(-4px)
-    }
-
-    .price-card.featured {
-      border-color: var(--accent);
-      box-shadow: 0 0 30px rgba(41, 121, 255, .15)
-    }
-
-    .price-card.featured::before {
-      content: '推薦';
-      position: absolute;
-      top: -12px;
-      right: 20px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      padding: .3rem 1rem;
-      border-radius: 20px;
+      top: -28px;
+      left: 50%;
+      transform: translateX(-50%);
       font-size: .75rem;
-      font-weight: 700
-    }
-
-    .price-name {
-      font-size: 1.2rem;
       font-weight: 700;
-      margin-bottom: .3rem
+      letter-spacing: .08em;
+      color: var(--text3);
+      white-space: nowrap;
+      transition: color .6s;
     }
 
-    .price-tag {
-      font-size: 2.8rem;
-      font-weight: 800;
-      margin: 1rem 0;
-      line-height: 1
-    }
+    .tl-node.active .tl-step { color: var(--node-color, var(--blue)); }
 
-    .price-tag span {
-      font-size: .9rem;
-      font-weight: 400;
-      color: var(--muted)
-    }
-
-    .price-desc {
-      color: var(--muted);
-      font-size: .88rem;
-      margin-bottom: 1.5rem;
-      line-height: 1.6
-    }
-
-    .price-features {
-      list-style: none;
-      margin-bottom: 2rem
-    }
-
-    .price-features li {
-      padding: .5rem 0;
-      font-size: .9rem;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: .5rem;
-      border-bottom: 1px solid rgba(255, 255, 255, .04)
-    }
-
-    .price-features li:last-child {
-      border: none
-    }
-
-    .check {
-      color: var(--accent2)
-    }
-
-    .cross {
-      color: #ff4757
-    }
-
-    .btn-price {
-      display: block;
-      width: 100%;
-      padding: .85rem;
-      border-radius: 10px;
-      text-align: center;
-      font-weight: 700;
-      font-size: .95rem;
-      transition: all .3s;
-      cursor: pointer;
-      border: none;
-      text-decoration: none
-    }
-
-    .btn-price.primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff
-    }
-
-    .btn-price.primary:hover {
-      box-shadow: 0 0 20px rgba(41, 121, 255, .5)
-    }
-
-    .btn-price.outline {
-      background: transparent;
-      color: var(--text);
-      border: 1px solid var(--border)
-    }
-
-    .btn-price.outline:hover {
-      border-color: var(--accent);
-      background: rgba(41, 121, 255, .05)
-    }
-
-    /* ── FAQ ── */
-    .faq-list {
-      max-width: 750px;
-      margin: 0 auto
-    }
-
-    .faq-item {
-      border: 1px solid var(--border2);
-      border-radius: 14px;
-      margin-bottom: .75rem;
-      overflow: hidden;
-      background: var(--card);
-      backdrop-filter: blur(12px);
-      transition: border-color .2s
-    }
-
-    .faq-item:hover {
-      border-color: rgba(41, 121, 255, .3)
-    }
-
-    .faq-q {
-      padding: 1.2rem 1.5rem;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-weight: 600;
-      font-size: .95rem;
-      color: var(--text);
-      user-select: none
-    }
-
-    .faq-q .arrow {
-      transition: transform .3s;
-      color: var(--accent);
-      font-size: 1.2rem
-    }
-
-    .faq-item.open .faq-q .arrow {
-      transform: rotate(180deg)
-    }
-
-    .faq-a {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height .35s ease, padding .35s ease;
-      padding: 0 1.5rem;
-      color: var(--muted);
-      font-size: .9rem;
-      line-height: 1.7
-    }
-
-    .faq-item.open .faq-a {
-      max-height: 300px;
-      padding: 0 1.5rem 1.2rem
-    }
-
-    /* ── Footer ── */
-    .landing-footer {
-      text-align: center;
-      padding: 3rem 2rem;
-      border-top: 1px solid var(--border2);
-      color: var(--muted);
-      font-size: .85rem
-    }
-
-    /* ── Responsive ── */
-    @media(max-width:768px) {
-      .hero h1 {
-        font-size: 2rem
-      }
-
-      .hero p {
-        font-size: 1rem
-      }
-
-      .pricing-grid {
-        grid-template-columns: 1fr
-      }
-
-      .nav-links a:not(.btn-login) {
-        display: none
-      }
-    }
-
-    /* ── Animate on scroll ── */
-    .aos {
+    /* Content card — alternates left and right */
+    .tl-content {
       opacity: 0;
-      transform: translateY(25px);
-      transition: all .6s ease-out
+      transition: all .7s var(--ease);
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 2.5rem;
+      border-radius: 24px;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
 
-    .aos.visible {
-      opacity: 1;
-      transform: translateY(0)
+    .tl-node.active .tl-content {
+      background: rgba(255, 255, 255, 0.025);
+      border-color: rgba(255, 255, 255, 0.06);
     }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
+
+    .tl-node:nth-child(odd) .tl-content {
+      grid-column: 1;
+      grid-row: 1;
+      transform: translateX(-40px);
+    }
+
+    .tl-node:nth-child(even) .tl-content {
+      grid-column: 2;
+      grid-row: 1;
+      transform: translateX(40px);
+    }
+
+    /* Visual panel — opposite side of content */
+    .tl-visual {
+      opacity: 0;
+      transition: all .7s .1s var(--ease);
+    }
+
+    .tl-node:nth-child(odd) .tl-visual {
+      grid-column: 2;
+      grid-row: 1;
+      transform: translateX(40px);
+    }
+
+    .tl-node:nth-child(even) .tl-visual {
+      grid-column: 1;
+      grid-row: 1;
+      transform: translateX(-40px);
+    }
+
+    /* Active state — slide in */
+    .tl-node.active .tl-content,
+    .tl-node.active .tl-visual {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .tl-content h3 {
+      font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em;
+      line-height: 1.25; margin-bottom: .6rem;
+    }
+
+    .tl-content .sub {
+      font-size: .95rem; color: var(--text3); font-weight: 500;
+      letter-spacing: .03em; margin-bottom: .5rem;
+    }
+
+    .tl-content p {
+      font-size: 1.05rem; color: var(--text2); line-height: 1.7; font-weight: 300;
+    }
+
+    .tl-content .tags {
+      display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem;
+    }
+
+    /* All tags left aligned */
+    .tl-content .tags { justify-content: flex-start; }
+
+    .tl-content .tag {
+      padding: .35rem .8rem;
+      border-radius: 980px;
+      font-size: .8rem;
+      font-weight: 500;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+      color: var(--text3);
+      transition: all .3s;
+    }
+
+    .tl-node.active .tag {
+      border-color: color-mix(in srgb, var(--node-color, var(--blue)) 30%, transparent);
+      color: var(--node-color, var(--blue));
+      background: color-mix(in srgb, var(--node-color, var(--blue)) 6%, transparent);
+    }
+
+    /* Visual panel card */
+    .tl-vcard {
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      aspect-ratio: 16 / 10;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .6s;
+    }
+
+    .tl-node.active .tl-vcard {
+      border-color: color-mix(in srgb, var(--node-color, var(--blue)) 20%, transparent);
+    }
+
+    .tl-vcard-inner {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      padding: 10px; /* Mockup window frame padding */
+    }
+
+    .tl-vimage {
+      width: 100%; height: 100%;
+      object-fit: contain; /* Prevent screenshots from being cropped */
+      border-radius: 12px;
+      z-index: 1;
+      opacity: 0.75;
+      background: rgba(0, 0, 0, 0.25); /* Sleek backdrop for image boundary */
+      transition: all .5s var(--ease);
+    }
+
+    .tl-node.active .tl-vimage {
+      opacity: 1;
+    }
+
+    .tl-vcard:hover .tl-vimage {
+      transform: scale(1.025);
+    }
+
+    .tl-vcard .glow {
+      position: absolute; border-radius: 50%; filter: blur(45px); pointer-events: none;
+      animation: floatG 6s ease-in-out infinite;
+      opacity: 0; transition: opacity .8s;
+      z-index: 2;
+    }
+
+    .tl-node.active .tl-vcard .glow { opacity: 0.15; }
+
+    @keyframes floatG {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(8px,-12px) scale(1.05); }
+      66% { transform: translate(-6px,8px) scale(.95); }
+    }
+
+    .tl-vcard .vlabel {
+      position: absolute; bottom: 10px; left: 10px;
+      background: rgba(0,0,0,.7); backdrop-filter: blur(10px);
+      padding: .3rem .7rem; border-radius: 6px;
+      font-size: .65rem; color: var(--text2);
+      border: 1px solid rgba(255,255,255,.08);
+      z-index: 3;
+    }
+
+    /* Color presets for each node */
+    .tl-node[data-color="blue"]   { --node-color: var(--blue); }
+    .tl-node[data-color="green"]  { --node-color: var(--green); }
+    .tl-node[data-color="purple"] { --node-color: var(--purple); }
+    .tl-node[data-color="teal"]   { --node-color: var(--teal); }
+    .tl-node[data-color="orange"] { --node-color: var(--orange); }
+    .tl-node[data-color="pink"]   { --node-color: var(--pink); }
+
+    /* Background gradient per card */
+    .vbg-1 { background: linear-gradient(160deg, #0a0f1a, #0d1528 50%, #060a12); }
+    .vbg-2 { background: linear-gradient(160deg, #050f0a, #0a1a10 50%, #040a06); }
+    .vbg-3 { background: linear-gradient(160deg, #0f0a18, #14082a 50%, #0a0612); }
+    .vbg-4 { background: linear-gradient(160deg, #0a1218, #081a22 50%, #060e14); }
+    .vbg-5 { background: linear-gradient(160deg, #12100a, #1a1408 50%, #0e0c06); }
+    .vbg-6 { background: linear-gradient(160deg, #120a10, #1a0814 50%, #0e060a); }
+    .vbg-7 { background: linear-gradient(160deg, #0a0a14, #10102a 50%, #06060e); }
+
+    /* ═══ ARCH CTA ═══ */
+    .sec { padding: 6rem 2rem; position: relative; }
+    .sec-inner { max-width: 1060px; margin: 0 auto; }
+
+    .arch-cta {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 28px; padding: 4rem 3rem; text-align: center;
+      position: relative; overflow: hidden; transition: border-color .4s;
+    }
+    .arch-cta:hover { border-color: var(--border2); }
+    .arch-cta::before {
+      content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+      width: 350px; height: 350px;
+      background: radial-gradient(circle, rgba(191,90,242,.08), transparent 70%);
+      pointer-events: none;
+    }
+    .arch-cta > * { position: relative; z-index: 1; }
+    .arch-ico {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: linear-gradient(135deg, rgba(191,90,242,.12), rgba(41,151,255,.12));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; margin: 0 auto 1.2rem;
+    }
+    .arch-cta h3 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin-bottom: .6rem; }
+    .arch-cta p {
+      color: var(--text2); font-size: .95rem; max-width: 520px;
+      margin: 0 auto 2rem; line-height: 1.7; font-weight: 300;
+    }
+
+    .divider {
+      height: 1px; max-width: 1060px; margin: 0 auto;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
+    /* ═══ PRICING ═══ */
+    .pricing-sec { background: rgba(0,0,0,.3); }
+    .sec-header { text-align: center; margin-bottom: 4rem; }
+    .sec-label { font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--blue); margin-bottom: .6rem; }
+    .sec-heading { font-size: clamp(1.8rem,4vw,2.8rem); font-weight: 700; letter-spacing: -.035em; line-height: 1.12; margin-bottom: .8rem; }
+    .sec-desc { font-size: 1.05rem; color: var(--text2); max-width: 520px; margin: 0 auto; font-weight: 300; line-height: 1.7; }
+
+    .pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.2rem; align-items: start; }
+    .price-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 2.2rem 1.8rem; position: relative; transition: all .4s var(--ease);
+    }
+    .price-card:hover { border-color: var(--border2); transform: translateY(-6px); }
+    .price-card.feat { border-color: rgba(41,151,255,.25); background: rgba(41,151,255,.03); }
+    .price-card.feat::before {
+      content: ''; position: absolute; inset: -1px; border-radius: var(--radius); padding: 1px;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+    }
+    .price-badge {
+      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+      padding: .3rem 1rem; border-radius: 980px;
+      background: linear-gradient(135deg, var(--blue), var(--green));
+      color: #fff; font-size: .68rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+    }
+    .price-tier { font-size: .85rem; font-weight: 600; color: var(--text2); margin-bottom: .4rem; }
+    .price-amt { font-size: 2.8rem; font-weight: 800; letter-spacing: -.04em; line-height: 1; margin-bottom: .25rem; }
+    .price-amt .cur { font-size: 1.2rem; font-weight: 500; vertical-align: super; }
+    .price-amt .per { font-size: .85rem; font-weight: 400; color: var(--text3); }
+    .price-desc { color: var(--text3); font-size: .85rem; margin-bottom: 1.5rem; line-height: 1.5; }
+    .price-list { list-style: none; margin-bottom: 1.8rem; }
+    .price-list li { padding: .45rem 0; font-size: .85rem; color: var(--text2); display: flex; align-items: center; gap: .5rem; }
+    .ick { width:16px;height:16px;border-radius:50%;background:rgba(48,209,88,.1);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:.6rem;flex-shrink:0; }
+    .ilk { width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.04);color:var(--text3);display:flex;align-items:center;justify-content:center;font-size:.55rem;flex-shrink:0; }
+    .dim { color: var(--text3); }
+    .btn-pr {
+      display: block; width: 100%; padding: .75rem; border-radius: 980px;
+      text-align: center; font-weight: 600; font-size: .88rem;
+      transition: all .25s var(--ease); cursor: pointer; border: none;
+    }
+    .btn-pr.filled { background: var(--blue); color: #fff; }
+    .btn-pr.filled:hover { background: #1a8aff; box-shadow: 0 4px 18px rgba(41,151,255,.25); }
+    .btn-pr.out { background: transparent; color: var(--blue); border: 1px solid rgba(41,151,255,.25); }
+    .btn-pr.out:hover { background: rgba(41,151,255,.05); border-color: var(--blue); }
+
+    /* ═══ FAQ ═══ */
+    .faq-list { max-width: 700px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid var(--border); }
+    .faq-q {
+      padding: 1.3rem 0; cursor: pointer; display: flex; justify-content: space-between;
+      align-items: center; font-weight: 500; font-size: .92rem; user-select: none; transition: color .2s;
+    }
+    .faq-q:hover { color: var(--blue); }
+    .faq-q .chv {
+      width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,.05);
+      display: flex; align-items: center; justify-content: center;
+      transition: all .35s var(--ease); flex-shrink: 0; color: var(--text3); font-size: .7rem;
+    }
+    .faq-item.open .faq-q .chv { transform: rotate(45deg); background: rgba(41,151,255,.1); color: var(--blue); }
+    .faq-a {
+      max-height: 0; overflow: hidden; transition: max-height .45s var(--ease), padding .45s var(--ease);
+      padding: 0; color: var(--text2); font-size: .88rem; line-height: 1.8;
+    }
+    .faq-item.open .faq-a { max-height: 450px; padding: 0 0 1.4rem; }
+
+    /* ═══ FOOTER ═══ */
+    .footer { padding: 3rem 2rem; text-align: center; border-top: 1px solid var(--border); }
+    .footer-brand { display: inline-flex; align-items: center; gap: .4rem; font-weight: 600; font-size: .9rem; margin-bottom: .6rem; }
+    .footer p { color: var(--text3); font-size: .78rem; }
+    .footer-links { display: flex; gap: 1.5rem; justify-content: center; margin-top: .8rem; }
+    .footer-links a { color: var(--text3); font-size: .78rem; transition: color .2s; }
+    .footer-links a:hover { color: var(--text); }
+
+    /* ═══ Scroll anim helpers ═══ */
+    .anim { opacity:0; transform: translateY(40px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+    .anim.show { opacity:1; transform: translateY(0); }
+    .anim-scale { opacity:0; transform: scale(.92) translateY(20px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+    .anim-scale.show { opacity:1; transform: scale(1) translateY(0); }
+    .stagger-1{transition-delay:.05s}.stagger-2{transition-delay:.12s}.stagger-3{transition-delay:.19s}
+
+    /* ═══ RESPONSIVE ═══ */
+    @media (max-width: 900px) {
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      .timeline-svg { display: none; } /* Hide S-curve on mobile */
+      .tl-node {
+        grid-template-columns: 1fr !important;
+        gap: 1.8rem !important;
+        margin-bottom: 4rem !important;
+      }
+      .tl-content {
+        grid-column: 1 !important; grid-row: 1 !important;
+        padding: 1.25rem !important;
+        transform: translateY(20px) !important;
+      }
+      .tl-node.active .tl-content { transform: translateY(0) !important; }
+      .tl-content .tags { justify-content: flex-start !important; }
+      .tl-visual {
+        grid-column: 1 !important; grid-row: 2 !important;
+        padding: 0 !important; margin-top: 0.5rem;
+        transform: translateY(20px) !important;
+      }
+      .tl-node.active .tl-visual { transform: translateY(0) !important; }
+    }
+    @media (max-width: 768px) {
+      .nav-links a:not(.nav-cta) { display: none; }
+      .hero { padding: 6rem 1.2rem 4rem; }
+      .sec { padding: 5rem 1.2rem; }
+      .timeline-section { padding: 4rem 1rem; }
+      .arch-cta { padding: 2.5rem 1.5rem; }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- HUD Background -->
-  <div class="hud-bg-wrap"><canvas id="canvas-hud"></canvas></div>
-  <div class="hud-overlay-wrap">
-    <div class="scanline"></div><canvas id="canvas-top"></canvas>
-  </div>
-  <div id="cursor-outline"></div>
-
-  <!-- Navigation -->
-  <nav class="landing-nav" id="landingNav">
+  <!-- Nav -->
+  <nav class="nav" id="mainNav">
     <div class="nav-inner">
-      <a class="brand" href="#">
-        <span>🌿</span>
-        <span class="brand-text">Eco Trust AI</span>
-      </a>
+      <a class="nav-brand" href="#"><span class="nav-brand-dot">🌿</span><span>Eco Trust AI</span></a>
       <div class="nav-links">
-        <a href="#features">功能特色</a>
-        <a href="#system-architecture">架構分流</a>
-        <a href="#pricing">付費方案</a>
-        <a href="#faq">常見問題</a>
-        <a href="/eco_sys/login.php" class="btn-login">🔐 登入系統</a>
+        <a href="#timeline">分析流程</a>
+        <a href="#architecture">系統架構</a>
+        <a href="#pricing">方案</a>
+        <a href="#faq">FAQ</a>
+        <a href="/eco_sys/login.php" class="nav-cta">登入平台</a>
       </div>
     </div>
   </nav>
 
-  <!-- Hero -->
+  <!-- ═══ HERO ═══ -->
   <section class="hero" id="hero">
-    <div class="hero-content">
-      <div class="hero-orb"><span class="orb-icon">🌿</span></div>
-      <div class="hero-badge">🔬 Powered by FinBERT AI</div>
-      <h1>以 AI 驅動的<br><span class="gradient">ESG 永續誠信分析平台</span></h1>
-      <p>Eco Trust AI 結合 FinBERT 深度學習模型與自然語言處理技術，為企業提供全面的 ESG 永續報告解析、誠信信心評分及新聞趨勢監測，賦能您的永續投資決策。</p>
-      <div class="hero-btns">
-        <a href="/eco_sys/login.php" class="btn-hero primary">立即開始使用</a>
-        <a href="#features" class="btn-hero ghost">了解更多 ↓</a>
+    <div class="hero-bg-container" id="heroBgContainer">
+      <div class="hero-bg-sharp"></div>
+      <div class="hero-bg-blur"></div>
+      <div class="hero-bg-overlay"></div>
+    </div>
+    <div class="hero-chip hero-enter hero-enter-1"><span class="dot"></span>FinBERT AI · Ollama Qwen2.5 · Page-Aware RAG</div>
+    <h1 class="hero-enter hero-enter-2">重新定義<br><span class="grad">ESG 永續誠信分析</span></h1>
+    <p class="hero-sub hero-enter hero-enter-3">結合 FinBERT 深度學習、頁碼感知 RAG 檢索與 ReAct 智能代理，<br>為企業提供可溯源、可驗證的永續報告深度分析。</p>
+    <div class="hero-actions hero-enter hero-enter-4">
+      <a href="/eco_sys/login.php" class="btn-p">開始使用 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+      <a href="#timeline" class="btn-s">探索分析流程 →</a>
+    </div>
+    <div class="scroll-ind scroll-ind-enter"><div class="scroll-pill"></div><span>Scroll</span></div>
+  </section>
+
+  <!-- ═══ TIMELINE — Linear Pipeline ═══ -->
+  <section class="timeline-section" id="timeline">
+
+    <div class="timeline-header anim">
+      <div class="label">端到端分析流程</div>
+      <h2>從 PDF 上傳到智能洞察</h2>
+      <p>一份報告、九個階段、全程自動化 — 跟隨時間軸探索每一步技術細節。</p>
+    </div>
+
+    <div class="timeline-wrap" id="timelineWrap">
+      <!-- Winding S-curve SVG -->
+      <svg class="timeline-svg" id="timelineSvg">
+        <defs>
+          <linearGradient id="timelineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="var(--blue)" />
+            <stop offset="25%" stop-color="var(--teal)" />
+            <stop offset="50%" stop-color="var(--green)" />
+            <stop offset="75%" stop-color="var(--purple)" />
+            <stop offset="100%" stop-color="var(--pink)" />
+          </linearGradient>
+        </defs>
+        <path class="timeline-svg-track" id="svgTrack" d="" fill="none" />
+        <path class="timeline-svg-progress" id="svgProgress" fill="none" />
+      </svg>
+
+      <!-- ① PDF Upload & Pre-check -->
+      <div class="tl-node" data-color="blue">
+        <div class="tl-content">
+          <div class="tl-header-row">
+            <div class="tl-dot-wrap">
+              <span class="tl-step">01</span>
+              <div class="tl-dot">📄</div>
+            </div>
+            <div>
+              <div class="sub">STEP 01</div>
+              <h3>PDF 上傳與預檢防禦</h3>
+            </div>
+          </div>
+          <p>解析檔名提取股票代號與年份，ESG 哨兵詞彙命中率檢測 — 非 ESG 報告自動退回，防止垃圾文件污染數據庫。</p>
+          <div class="tags">
+            <span class="tag">pdfplumber</span>
+            <span class="tag">元數據校驗</span>
+            <span class="tag">排重檢測</span>
+          </div>
+        </div>
+        <div class="tl-visual">
+          <div class="tl-vcard vbg-1">
+            <div class="tl-vcard-inner">
+              <div class="glow" style="width:180px;height:180px;background:rgba(41,151,255,.15);top:15%;left:15%;"></div>
+              <img src="assets/img/Upload Pre-check Gate.png" alt="Upload Pre-check Gate" class="tl-vimage">
+              <div class="vlabel">Upload Pre-check Gate</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ② FinBERT Analysis -->
+      <div class="tl-node" data-color="green">
+        <div class="tl-content">
+          <div class="tl-header-row">
+            <div class="tl-dot-wrap">
+              <span class="tl-step">02</span>
+              <div class="tl-dot">🧠</div>
+            </div>
+            <div>
+              <div class="sub">STEP 02</div>
+              <h3>FinBERT 深度情感分析</h3>
+            </div>
+          </div>
+          <p>隨機抽取 100 句核心承諾句，使用金融預訓練 BERT 模型逐句進行 ESG 情感分類（正面/負面/中立）與意圖判定。</p>
+          <div class="tags">
+            <span class="tag">finbert-esg</span>
+            <span class="tag">情感分類</span>
+            <span class="tag">承諾句採樣</span>
+          </div>
+        </div>
+        <div class="tl-visual">
+          <div class="tl-vcard vbg-2">
+            <div class="tl-vcard-inner">
+              <div class="glow" style="width:200px;height:200px;background:rgba(48,209,88,.12);top:10%;right:10%;"></div>
+              <img src="assets/img/FinBERT ESG Inference.png" alt="FinBERT ESG Inference" class="tl-vimage">
+              <div class="vlabel">FinBERT ESG Inference</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ Sigmoid Scoring -->
+      <div class="tl-node" data-color="teal">
+        <div class="tl-content">
+          <div class="tl-header-row">
+            <div class="tl-dot-wrap">
+              <span class="tl-step">03</span>
+              <div class="tl-dot">📐</div>
+            </div>
+            <div>
+              <div class="sub">STEP 03</div>
+              <h3>Sigmoid 歸一化信心評分</h3>
+            </div>
+          </div>
+          <p>計算數據密度、KPI 提及率及承諾強度，經由 Sigmoid 壓縮函數進行歸一化處理，拉開不同誠信度企業的得分差距。</p>
+          <div class="tags">
+            <span class="tag">Sigmoid 壓縮</span>
+            <span class="tag">KPI 密度</span>
+            <span class="tag">信心分數</span>
+          </div>
+        </div>
+        <div class="tl-visual">
+          <div class="tl-vcard vbg-4">
+            <div class="tl-vcard-inner">
+              <div class="glow" style="width:170px;height:170px;background:rgba(100,210,255,.12);bottom:15%;left:20%;"></div>
+              <img src="assets/img/Confidence Score Engine.png" alt="Confidence Score Engine" class="tl-vimage">
+              <div class="vlabel">Confidence Score Engine</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ Gen-2 Commitment -->
+      <div class="tl-node" data-color="purple">
+        <div class="tl-content">
+          <div class="tl-header-row">
+            <div class="tl-dot-wrap">
+              <span class="tl-step">04</span>
+              <div class="tl-dot">🛡️</div>
+            </div>
+            <div>
+              <div class="sub">STEP 04</div>
+              <h3>Gen-2 承諾指標提取</h3>
+            </div>
+          </div>
+          <p>正則表達式 + 語意定位挖掘「碳中和、減碳比例、再生能源」等承諾，依時間明確度與量化程度劃分高/中/低三級信賴等級。</p>
+          <div class="tags">
+            <span class="tag">Regex 提取</span>
+            <span class="tag">高/中/低信度</span>
+            <span class="tag">語意定位</span>
+          </div>
+        </div>
+        <div class="tl-visual">
+          <div class="tl-vcard vbg-3">
+            <div class="tl-vcard-inner">
+              <div class="glow" style="width:190px;height:190px;background:rgba(191,90,242,.12);top:10%;left:10%;"></div>
+              <img src="assets/img/Gen-2 Commitment Extractor.png" alt="Gen-2 Commitment Extractor" class="tl-vimage">
+              <div class="vlabel">Gen-2 Commitment Extractor</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑤ News Crawling -->
+      <div class="tl-node" data-color="orange">
+        <div class="tl-content">
+          <div class="tl-header-row">
+            <div class="tl-dot-wrap">
+              <span class="tl-step">05</span>
+              <div class="tl-dot">📰</div>
+            </div>
+            <div>
+              <div class="sub">STEP 05</div>
+              <h3>非同步新聞輿情監察</h3>
+            </div>
+          </div>
+          <p>背景爬蟲自動抓取企業相關新聞，NLP 情感極性分析計算輿情指數，動態加權融入 ESG 評分體系 — 對比企業「言」與「行」。</p>
+          <div class="tags">
+            <span class="tag">背景爬蟲</span>
+            <span class="tag">NLP 極性分析</span>
+            <span class="tag">加權融合</span>
+          </div>
+        </div>
+        <div class="tl-visual">
+          <div class="tl-vcard vbg-5">
+            <div class="tl-vcard-inner">
+              <div class="glow" style="width:160px;height:160px;background:rgba(255,159,10,.1);top:20%;right:15%;"></div>
+              <img src="assets/img/Async News Crawler.png" alt="Async News Crawler" class="tl-vimage">
+              <div class="vlabel">Async News Crawler</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑥ Core Dashboard -->
+      <div class="tl-node" data-color="green">
+        <div class="tl-content">
+          <div class="tl-header-row">
+            <div class="tl-dot-wrap">
+              <span class="tl-step">06</span>
+              <div class="tl-dot">🖥️</div>
+            </div>
+            <div>
+              <div class="sub">STEP 06</div>
+              <h3>ESG 企業誠信核心看板</h3>
+            </div>
+          </div>
+          <p>整合企業基本資料、歷史信用走勢、大宗輿情情感指標，並透過互動式長條圖與圓餅圖即時呈現 E、S、G 各維度之細項得分，打造一站式數據決策中心。</p>
+          <div class="tags">
+            <span class="tag">E-S-G 指標分析</span>
+            <span class="tag">歷史誠信走勢</span>
+            <span class="tag">數據決策看板</span>
+          </div>
+        </div>
+        <div class="tl-visual">
+          <div class="tl-vcard vbg-2">
+            <div class="tl-vcard-inner">
+              <div class="glow" style="width:200px;height:200px;background:rgba(48,209,88,.12);top:10%;right:10%;"></div>
+              <img src="assets/img/核心看板.png" alt="核心看板" class="tl-vimage">
+              <div class="vlabel">Core Dashboard</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑦ 2D Bubble Chart -->
+      <div class="tl-node" data-color="teal">
+        <div class="tl-content">
+          <div class="tl-header-row">
+            <div class="tl-dot-wrap">
+              <span class="tl-step">07</span>
+              <div class="tl-dot">🫧</div>
+            </div>
+            <div>
+              <div class="sub">STEP 07</div>
+              <h3>ESG 誠信與輿情 2D 氣泡圖</h3>
+            </div>
+          </div>
+          <p>橫軸代表企業誠信得分，縱軸為新聞輿情極性，氣泡大小對應承諾句總量；直觀呈現企業是否「言行一致」，快速識別潛在的綠色宣傳風險。</p>
+          <div class="tags">
+            <span class="tag">2D 氣泡分佈</span>
+            <span class="tag">言行一致性對比</span>
+            <span class="tag">綠色合規風險</span>
+          </div>
+        </div>
+        <div class="tl-visual">
+          <div class="tl-vcard vbg-4">
+            <div class="tl-vcard-inner">
+              <div class="glow" style="width:170px;height:170px;background:rgba(100,210,255,.12);bottom:15%;left:20%;"></div>
+              <img src="assets/img/2d氣泡圖.png" alt="2d氣泡圖" class="tl-vimage">
+              <div class="vlabel">2D Bubble Chart</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑧ Page-Aware RAG -->
+      <div class="tl-node" data-color="blue">
+        <div class="tl-content">
+          <div class="tl-header-row">
+            <div class="tl-dot-wrap">
+              <span class="tl-step">08</span>
+              <div class="tl-dot">💬</div>
+            </div>
+            <div>
+              <div class="sub">STEP 08</div>
+              <h3>頁碼感知 RAG 智能顧問</h3>
+            </div>
+          </div>
+          <p>Bigram 中文分詞對每頁建立索引，提問時擷取最相關頁面段落，附上 [p.X] 標記 — 點擊即可透過 PDF.js 跳轉至原文頁面。</p>
+          <div class="tags">
+            <span class="tag">Bigram 索引</span>
+            <span class="tag">PDF.js 跳轉</span>
+            <span class="tag">[p.X] 溯源</span>
+          </div>
+        </div>
+        <div class="tl-visual">
+          <div class="tl-vcard vbg-1">
+            <div class="tl-vcard-inner">
+              <div class="glow" style="width:200px;height:200px;background:rgba(41,151,255,.12);bottom:10%;left:15%;"></div>
+              <img src="assets/img/Page-Aware RAG Engine.png" alt="Page-Aware RAG Engine" class="tl-vimage">
+              <div class="vlabel">Page-Aware RAG Engine</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⑨ ReAct Agent -->
+      <div class="tl-node" data-color="pink">
+        <div class="tl-content">
+          <div class="tl-header-row">
+            <div class="tl-dot-wrap">
+              <span class="tl-step">09</span>
+              <div class="tl-dot">🤖</div>
+            </div>
+            <div>
+              <div class="sub">STEP 09</div>
+              <h3>ReAct 智能代理分流</h3>
+            </div>
+          </div>
+          <p>自動判斷問題意圖：精確數據查詢走 Fast SQL Path（毫秒級回應）；抽象分析則啟動 ReAct Agent，自主調度 SQL + RAG + 新聞工具鏈。</p>
+          <div class="tags">
+            <span class="tag">Fast SQL Path</span>
+            <span class="tag">Agent ReAct</span>
+            <span class="tag">工具鏈調度</span>
+          </div>
+        </div>
+        <div class="tl-visual">
+          <div class="tl-vcard vbg-6">
+            <div class="tl-vcard-inner">
+              <div class="glow" style="width:180px;height:180px;background:rgba(255,55,95,.1);top:15%;right:10%;"></div>
+              <img src="assets/img/ReAct Agent Router.png" alt="ReAct Agent Router" class="tl-vimage">
+              <div class="vlabel">ReAct Agent Router</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ═══ ARCHITECTURE CTA ═══ -->
+  <section class="sec" id="architecture">
+    <div class="sec-inner">
+      <div class="arch-cta anim">
+        <div class="arch-ico">⚡</div>
+        <h3>互動式系統架構流程模擬器</h3>
+        <p>完整可視化核心管道架構流程：從 PDF 上傳到 ReAct 智能分流的端到端運作。點擊啟動即時路徑模擬與 Console 監控。</p>
+        <a href="/eco_sys/chatbot_mcp_flow.html" class="btn-p">啟動流程模擬器 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
-  <section id="features">
-    <div class="section-inner">
-      <div class="section-title">
-        <h2>🚀 核心功能</h2>
-        <p>全方位 ESG 分析解決方案，從報告解析到趨勢洞察</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card aos">
-          <div class="feature-icon">🧠</div>
-          <h3>FinBERT AI 深度分析</h3>
-          <p>基於金融領域預訓練的 BERT 模型，精準解析 ESG 報告中的永續承諾與關鍵指標。</p>
-        </div>
-        <div class="feature-card aos">
-          <div class="feature-icon">📊</div>
-          <h3>ESG 誠信信心評分</h3>
-          <p>自動計算企業永續報告的誠信信心分數，量化評估 ESG 承諾的可信度與一致性。</p>
-        </div>
-        <div class="feature-card aos">
-          <div class="feature-icon">📰</div>
-          <h3>即時新聞監察</h3>
-          <p>整合新聞 NLP 分析，即時追蹤與企業 ESG 相關的新聞動態與市場趨勢。</p>
-        </div>
-        <div class="feature-card aos">
-          <div class="feature-icon">🫧</div>
-          <h3>ESG 走勢氣泡分析</h3>
-          <p>透過動態氣泡圖視覺化企業 ESG 表現趨勢，結合 ROE 財務指標進行多維度交叉分析。</p>
-        </div>
-        <div class="feature-card aos">
-          <div class="feature-icon">🛡️</div>
-          <h3>報告真實性驗證</h3>
-          <p>AI 自動驗證永續報告的數據一致性與承諾落實度，為投資決策提供更透明的參考依據。</p>
-        </div>
-        <div class="feature-card aos">
-          <div class="feature-icon">📈</div>
-          <h3>數據管理中心</h3>
-          <p>集中管理與比對歷年 ESG 數據，支援 PDF 報告一鍵上傳，系統自動提取關鍵指標。</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  <div class="divider"></div>
 
-  <!-- Flowchart Visualizer CTA Section -->
-  <section id="system-architecture" style="background: rgba(41, 121, 255, 0.01); border-top: 1px solid rgba(41, 121, 255, 0.08); border-bottom: 1px solid rgba(41, 121, 255, 0.08);">
-    <div class="section-inner">
-      <div class="section-title">
-        <h2>⚡ 系統架構與分流決策</h2>
-        <p>實時探索 Eco Trust AI 的端到端數據管道與智慧代理運作邏輯</p>
-      </div>
-      
-      <div style="max-width: 800px; margin: 0 auto; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 3rem 2rem; text-align: center; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 0 20px rgba(41, 121, 255, 0.05); position: relative; overflow: hidden;" class="aos">
-        <div style="position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(41, 121, 255, 0.15) 0%, transparent 70%); pointer-events: none;"></div>
-        <div style="position: absolute; bottom: -50px; left: -50px; width: 150px; height: 150px; background: radial-gradient(circle, rgba(0, 230, 118, 0.1) 0%, transparent 70%); pointer-events: none;"></div>
-        
-        <div style="font-size: 3.5rem; margin-bottom: 1.5rem; filter: drop-shadow(0 0 15px rgba(41, 121, 255, 0.4)); display: inline-block; animation: float 3s ease-in-out infinite;">⚙️</div>
-        
-        <h3 style="font-size: 1.4rem; color: var(--text); margin-bottom: 1rem; font-weight: 700;">互動式系統架構與流程模擬器</h3>
-        <p style="color: var(--muted); font-size: 0.95rem; line-height: 1.7; max-width: 600px; margin: 0 auto 2rem;">
-          我們將系統底層精密的資料管道（包含 PDF 上傳、FinBERT 信心評分、Gen-2 承諾指標提取、背景爬蟲）與 AI 智能顧問的「精確問答（Fast SQL Path）及抽象決策（Agent ReAct Path）」分流邏輯整合為一頁式視覺化流程圖。點擊下方按鈕啟動實時路徑模擬與 Console 控制台監控。
-        </p>
-        
-        <a href="/eco_sys/chatbot_mcp_flow.html" class="btn-hero primary" style="padding: 1.1rem 2.8rem; font-size: 1.05rem; display: inline-flex; align-items: center; gap: 0.8rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(41, 121, 255, 0.4); text-transform: uppercase; letter-spacing: 0.5px;">
-          <span>⚡ 啟動互動式流程模擬器</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition: transform 0.3s;"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Pricing -->
-  <section id="pricing">
-    <div class="section-inner">
-      <div class="section-title">
-        <h2>💎 付費方案</h2>
-        <p>選擇最適合您需求的方案，解鎖 ESG 分析的完整潛能</p>
+  <!-- ═══ PRICING ═══ -->
+  <section class="sec pricing-sec" id="pricing">
+    <div class="sec-inner">
+      <div class="sec-header anim">
+        <div class="sec-label">方案</div>
+        <h2 class="sec-heading">選擇適合您的方案</h2>
+        <p class="sec-desc">從免費瀏覽到完整 AI 智能顧問，逐級解鎖更深層的 ESG 分析能力。</p>
       </div>
       <div class="pricing-grid">
-        <!-- Free -->
-        <div class="price-card aos">
-          <div class="price-name" style="color:var(--text)">Free 體驗版</div>
-          <div class="price-tag">NT$0<span> /月</span></div>
-          <div class="price-desc">適合一般使用者，快速瀏覽現有 ESG 分析數據與趨勢。</div>
-          <ul class="price-features">
-            <li><span class="check">✓</span> ESG 核心儀表板瀏覽</li>
-            <li><span class="check">✓</span> ESG 走勢氣泡分析</li>
-            <li><span class="check">✓</span> 即時新聞監察</li>
-            <li><span class="cross">✕</span> <s style="color:var(--muted)">上傳 ESG 永續報告</s></li>
-            <li><span class="cross">✕</span> <s style="color:var(--muted)">FinBERT AI 自動評分</s></li>
-            <li><span class="cross">✕</span> <s style="color:var(--muted)">AI 智能顧問 (Chat Bot)</s></li>
+        <div class="price-card anim-scale stagger-1">
+          <div class="price-tier">Free 體驗版</div>
+          <div class="price-amt"><span class="cur">NT$</span>0<span class="per"> /月</span></div>
+          <div class="price-desc">瀏覽現有 ESG 數據與趨勢分析</div>
+          <ul class="price-list">
+            <li><span class="ick">✓</span> ESG 核心儀表板</li>
+            <li><span class="ick">✓</span> ESG 走勢氣泡分析</li>
+            <li><span class="ick">✓</span> 即時新聞監察</li>
+            <li><span class="ilk">🔒</span> <span class="dim">上傳 ESG 報告</span></li>
+            <li><span class="ilk">🔒</span> <span class="dim">FinBERT 自動評分</span></li>
+            <li><span class="ilk">🔒</span> <span class="dim">AI 智能顧問</span></li>
           </ul>
-          <a href="/eco_sys/login.php" class="btn-price outline">免費註冊</a>
+          <a href="/eco_sys/login.php" class="btn-pr out">免費註冊</a>
         </div>
-        <!-- Plus -->
-        <div class="price-card aos">
-          <div class="price-name" style="color:var(--accent)">Plus 基礎版</div>
-          <div class="price-tag">NT$299<span> /月</span></div>
-          <div class="price-desc">適合個人投資者或研究者，解鎖 ESG 報告上傳與 AI 解析功能。</div>
-          <ul class="price-features">
-            <li><span class="check">✓</span> Free 所有功能</li>
-            <li><span class="check">✓</span> <strong style="color:var(--accent)">上傳 ESG 永續報告 (PDF)</strong></li>
-            <li><span class="check">✓</span> <strong style="color:var(--accent)">FinBERT AI 自動評分</strong></li>
-            <li><span class="cross">✕</span> <s style="color:var(--muted)">ESG 文件深度分析</s></li>
-            <li><span class="cross">✕</span> <s style="color:var(--muted)">AI 智能顧問 (Chat Bot)</s></li>
-            <li><span class="cross">✕</span> <s style="color:var(--muted)">優先技術支援</s></li>
+        <div class="price-card anim-scale stagger-2">
+          <div class="price-tier">Plus 基礎版</div>
+          <div class="price-amt"><span class="cur">NT$</span>299<span class="per"> /月</span></div>
+          <div class="price-desc">解鎖 PDF 上傳與 AI 自動評分</div>
+          <ul class="price-list">
+            <li><span class="ick">✓</span> Free 所有功能</li>
+            <li><span class="ick">✓</span> <strong>上傳 ESG 報告 (PDF)</strong></li>
+            <li><span class="ick">✓</span> <strong>FinBERT AI 自動評分</strong></li>
+            <li><span class="ilk">🔒</span> <span class="dim">ESG 文件深度分析</span></li>
+            <li><span class="ilk">🔒</span> <span class="dim">AI 智能顧問</span></li>
+            <li><span class="ilk">🔒</span> <span class="dim">優先技術支援</span></li>
           </ul>
-          <a href="/eco_sys/login.php" class="btn-price outline"
-            style="border-color:var(--accent);color:var(--accent);">選擇 Plus</a>
+          <a href="/eco_sys/login.php" class="btn-pr out">選擇 Plus</a>
         </div>
-        <!-- Pro -->
-        <div class="price-card featured aos">
-          <div class="price-name" style="color:var(--accent2)">Pro 專業版</div>
-          <div class="price-tag">NT$899<span> /月</span></div>
-          <div class="price-desc">適合專業分析師與企業用戶，完整解鎖 AI 顧問與深度分析。</div>
-          <ul class="price-features">
-            <li><span class="check">✓</span> Plus 所有功能</li>
-            <li><span class="check">✓</span> <strong style="color:var(--accent2)">AI 智能顧問 (Chat Bot)</strong></li>
-            <li><span class="check">✓</span> <strong style="color:var(--accent2)">ESG 文件深度分析</strong></li>
-            <li><span class="check">✓</span> 報告真實性驗證引擎</li>
-            <li><span class="check">✓</span> 數據 management 與匯出</li>
-            <li><span class="check">✓</span> 優先技術支援</li>
+        <div class="price-card feat anim-scale stagger-3">
+          <div class="price-badge">推薦方案</div>
+          <div class="price-tier">Pro 專業版</div>
+          <div class="price-amt"><span class="cur">NT$</span>899<span class="per"> /月</span></div>
+          <div class="price-desc">完整 AI 顧問 + 深度分析 + 審計追蹤</div>
+          <ul class="price-list">
+            <li><span class="ick">✓</span> Plus 所有功能</li>
+            <li><span class="ick">✓</span> <strong>AI 智能顧問 (RAG + Agent)</strong></li>
+            <li><span class="ick">✓</span> <strong>ESG 文件深度分析</strong></li>
+            <li><span class="ick">✓</span> 報告真實性驗證引擎</li>
+            <li><span class="ick">✓</span> 數據管理與匯出</li>
+            <li><span class="ick">✓</span> 優先技術支援</li>
           </ul>
-          <a href="/eco_sys/login.php" class="btn-price primary">選擇 Pro — 推薦</a>
+          <a href="/eco_sys/login.php" class="btn-pr filled">選擇 Pro</a>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- FAQ -->
-  <section id="faq">
-    <div class="section-inner">
-      <div class="section-title">
-        <h2>❓ 常見問題</h2>
-        <p>關於 Eco Trust AI 的常見疑問與核心架構解析</p>
+  <div class="divider"></div>
+
+  <!-- ═══ FAQ ═══ -->
+  <section class="sec" id="faq">
+    <div class="sec-inner">
+      <div class="sec-header anim">
+        <div class="sec-label">常見問題</div>
+        <h2 class="sec-heading">深入了解技術細節</h2>
+        <p class="sec-desc">關於 Eco Trust AI 系統架構與核心技術的常見疑問。</p>
       </div>
       <div class="faq-list">
-        <div class="faq-item">
-          <div class="faq-q">1. Eco Trust AI 的 ESG 分析核心架構與底層技術是什麼？<span class="arrow">▼</span></div>
-          <div class="faq-a">我們的系統採用多層次技術架構：
-            <br>• <b>分析引擎</b>：核心基於 <strong>FinBERT</strong> (金融預訓練 BERT 模型，使用 <code>yiyanghkust/finbert-esg</code>) 對 ESG 報告中的承諾語句進行情感與具體性分類。
-            <br>• <b>數據處理</b>：後端採用 Python 指令腳本進行 PDF 文字提取（使用 <code>pdfplumber</code>）與中文分詞（使用 <code>jieba</code> 精確模式），精準抽取關鍵詞與實質指標。
-            <br>• <b>儲存與檢索</b>：使用 MySQL 儲存結構化指標與分析數據，並使用 Markdown 格式快照供向量 RAG 知識庫做局部檢索。
-            <br>• <b>前端視覺化</b>：整合 Plotly.js 繪製動態 ESG 看板、走勢氣泡圖以及企業財務績效的交叉分析圖表。
-          </div>
+        <div class="faq-item anim">
+          <div class="faq-q">Eco Trust AI 的核心架構與底層技術是什麼？<span class="chv">＋</span></div>
+          <div class="faq-a">系統採用多層次技術架構：<b>分析引擎</b>基於 FinBERT 對承諾語句進行情感分類；<b>數據處理</b>使用 Python + pdfplumber + jieba 分詞；<b>儲存</b>使用 MariaDB + Markdown RAG 快照；<b>前端</b>整合 Plotly.js 動態 ESG 看板。</div>
         </div>
-        <div class="faq-item">
-          <div class="faq-q">2. 智能顧問的「可篩選資料庫功能」是如何運作的？它在實際使用上有什麼優勢？<span class="arrow">▼</span></div>
-          <div class="faq-a">在對話界面中，用戶可以透過篩選面板選定特定<b>公司</b>（如 <code>1101_台泥</code>、<code>2330_台積電</code>）與<b>年份</b>（如 <code>2023</code>、<code>2024</code>），或選擇跨公司對比。
-            <br><br>
-            <b>三大核心優勢：</b>
-            <br>1. <b>精準度</b>：確保 AI 只從使用者指定範圍內的永續報告書及數據中尋找答案，不會張冠李戴或跨公司混淆。
-            <br>2. <b>消除幻覺</b>：將知識檢索範圍進行硬性過濾，從根本上杜絕大語言模型 (LLM) 在大範圍語料中容易產生的事實幻覺。
-            <br>3. <b>節省資源與效率</b>：僅讀取關聯文檔與指標，大幅降低 LLM 上下文 Token 消耗，並將回應速度提升 50% 以上。
-          </div>
+        <div class="faq-item anim">
+          <div class="faq-q">智能顧問的「可篩選資料庫」如何消除 LLM 幻覺？<span class="chv">＋</span></div>
+          <div class="faq-a">用戶選定公司與年份後，系統對知識檢索範圍進行硬性過濾，確保 AI 只從指定報告中檢索答案。同時大幅降低 Token 消耗並提升回應速度 50% 以上。</div>
         </div>
-        <div class="faq-item">
-          <div class="faq-q">3. 當使用者提問時，系統如何區分「精確問題」與「抽象問題」並進行分流處理？<span class="arrow">▼</span></div>
-          <div class="faq-a">當用戶在 Chatbot 輸入問題時，系統後端路由器（位於 <code>api/chat_api.php</code>）會對問題進行意圖與抽象度分類：
-            <br>• <b>精確路徑 (Fast Path)</b>：如果問題屬於「信心得分是多少？」或「2023年台泥的碳排放量是多少？」等具體數據查詢，系統會直接將問題翻譯為結構化 SQL 語句查詢數據庫，並以毫秒級速度返回精準數據與圖表。
-            <br>• <b>智慧代理路徑 (Agent ReAct Path)</b>：如果問題屬於「這家公司今年的 ESG 表現值得投資嗎？」等高度抽象或需要推論的問題，系統會啟動 AI Agent 代理。AI 會利用 <b>ReAct (Reasoning + Acting)</b> 思考框架規劃任務步驟，自主決定呼叫哪一個工具（例如 SQL 查詢工具、本地 RAG 檢索工具、或新聞輿情分析工具），並將多個管道獲取的數據融會貫通，最後寫出邏輯嚴密的評估報告。
-          </div>
+        <div class="faq-item anim">
+          <div class="faq-q">Fast SQL Path 與 Agent ReAct Path 的分流依據？<span class="chv">＋</span></div>
+          <div class="faq-a">後端路由器對問題進行意圖分類：精確數據查詢（如「碳排放量多少」）直接翻譯為 SQL；抽象推論（如「是否值得投資」）啟動 ReAct Agent 自主調度多工具鏈。</div>
         </div>
-        <div class="faq-item">
-          <div class="faq-q">4. 當我上傳 PDF 永續報告書後，系統在後端進行了哪些資料管道處理？<span class="arrow">▼</span></div>
-          <div class="faq-a">PDF 上傳到 <code>api/upload_pdf.php</code> 後，系統會進行一系列嚴密的自動化處理：
-            <br>1. <b>元數據校驗與排重</b>：解析檔案名稱（例如 <code>1101_台泥_2023.pdf</code>）提取股票代號與年份，並檢查資料庫是否已存在該記錄。
-            <br>2. <b>預檢防禦網 (Pre-check Gate)</b>：讀取 PDF 內容，過濾字數並檢查關鍵詞密度。若 ESG 核心哨兵詞彙（如「環境、永續、減碳」）命中過低，則判定為非 ESG 報告並退回，防止垃圾文件污染。
-            <br>3. <b>文字清洗與採樣</b>：將 PDF 內容進行段落分句，並隨機抽取 100 句核心承諾句。
-            <br>4. <b>FinBERT 模型推理</b>：調用預訓練 FinBERT 對抽樣句逐句進行 ESG 情感分類（正面/負面/中立）與意圖判定。
-            <br>5. <b>指標量化與信心評分</b>：計算報告中的數據密度、KPI 提及率及承諾強度，將各項權重指標經由 <b>Sigmoid 壓縮函數</b>進行歸一化處理，拉開不同誠信度企業的得分差距，產出「誠信信心評分」。
-            <br>6. <b>Gen-2 承諾提取</b>：運用正則表達式與語意定位挖掘「碳中和、控溫」等具體目標，判斷是否有時間表與量化數據，劃分信賴等級，最後與原始文字一併存入資料庫。
-          </div>
+        <div class="faq-item anim">
+          <div class="faq-q">上傳報告有什麼限制？<span class="chv">＋</span></div>
+          <div class="faq-a">僅支援 PDF（建議 50MB 以內），建議命名格式「股票代號_公司名稱_年份.pdf」。系統預檢機制會自動退回非 ESG 報告。</div>
         </div>
-        <div class="faq-item">
-          <div class="faq-q">5. 新聞輿情抓取與情緒加權功能是如何實現的？對分析有何幫助？<span class="arrow">▼</span></div>
-          <div class="faq-a">
-            • <b>非同步抓取</b>：在 PDF 上傳成功並完成基礎分析後，後端會利用非同步指令，在背景觸發 <code>background_fetch_news.php</code> 網頁爬蟲，抓取該企業於該報告年份的相關網路新聞。
-            <br>• <b>情緒分析</b>：使用 NLP 情感分析模型對抓取的新聞進行正面、中立與負面的極性分類，計算出該企業的「新聞輿情指數」。
-            <br>• <b>實時加權</b>：在「ESG 看板」中，我們提供了<b>新聞加權開關</b>。啟用後，Plotly 圖表會將企業的「FinBERT 誠信信心評分」與「新聞輿情指數」進行動態加權運算，結合外界輿論反映出企業是否有「言行不一」的情形，提供最客觀的 ESG 誠信度評分。
-          </div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-q">6. 什麼是 Gen-2 承諾指標？系統如何評估企業是否在誠信風險？<span class="arrow">▼</span></div>
-          <div class="faq-a">Gen-2 承諾指標專門用於挖掘企業在報告書中提出的「具體承諾強度」。系統會針對「碳中和、減碳比例、再生能源」等核心承諾句進行以下檢驗：
-            <br>1. <b>時間明確度</b>：是否有明確的目標年份（如 2030 年、2050 年）。
-            <br>2. <b>量化程度</b>：是否有明確的比例或數值（如 減碳 30%、使用 100% 綠電）。
-            <br>3. <b>信賴等級劃分</b>：如果承諾有時間且有數據，評為 <b>Grade A (高信賴度)</b>；若僅有數據無時間，評為 <b>Grade B</b>；若僅有空泛口號，評為 <b>Grade C</b>。
-            <br>透過將 these Grade 結合數據指標密度與 FinBERT 評分進行綜合計算，系統能迅速識別空洞的綠色口號，有效警示潛在的誠信風險。
-          </div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-q">7. 平台的免費體驗版、Plus 基礎版與 Pro 專業版方案在功能上有什麼具體差異？<span class="arrow">▼</span></div>
-          <div class="faq-a">
-            • <b>Free 體驗版 (NT$0/月)</b>：免費用戶可瀏覽系統已分析完畢的歷史 ESG 數據看板、Plotly 氣泡分析圖及即時新聞監察。
-            <br>• <b>Plus 基礎版 (NT$299/月)</b>：適合個人投資者或獨立研究員。解鎖 <b>PDF 永續報告上傳</b>、<b>後端 FinBERT AI 自動化評分</b>與<b>指標抽取</b>。
-            <br>• <b>Pro 專業版 (NT$899/月)</b>：解鎖完整功能。包括 <b>AI 智能顧問 (Chatbot)對話</b>（支援精確與抽象分流、RAG 與 Agent 代理模式）、<b>報告真實性驗證引擎</b>、<b>數據交叉管理與匯出</b>，並享有最優先的 GPU 伺服器分析與專屬技術支援。
-          </div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-q">8. 系統是如何確保數據庫查詢（SQL Path）與 RAG 檢索（RAG Path）的準確性？<span class="arrow">▼</span></div>
-          <div class="faq-a">
-            • <b>精準 SQL 對照</b>：系統對常見指標（如碳排放量、水資源消耗、董事會多元性等）建立了標準的數據 Schema。AI 的 SQL 查詢工具會直接對照數據庫表格，精確抓取已提取並經過結構化清洗的數據，保證數值無誤。
-            <br>• <b>高關聯度 RAG 塊檢索</b>：報告書上傳後會被切分為段落，並轉為 Markdown 檔案。當 AI 執行 RAG 工具時，會根據用戶提問進行語意比對，只抽取最相關的段落送給 LLM。配合用戶在前端選擇的公司與年份進行硬性過濾，完美實現「所答即所問」。
-          </div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-q">9. 上傳報告與系統使用上有什麼限制或規範？<span class="arrow">▼</span></div>
-          <div class="faq-a">
-            • <b>格式限制</b>：目前僅支援標準 PDF 格式的永續報告書，檔案大小建議在 50MB 以內。
-            <br>• <b>命名規範</b>：建議使用「<code>股票代號_公司名稱_年份.pdf</code>」（如 <code>1101_台泥_2023.pdf</code>）命名。如果格式不符，系統仍會引導您在介面上手動選擇與校對公司代碼與年份。
-            <br>• <b>預檢機制</b>：報告書必須包含實質 ESG 相關內容。若上傳無關的財務報表或產品說明書，系統的預檢防禦網會自動退回。
-          </div>
-        </div>
-        <div class="faq-item">
-          <div class="faq-q">10. 我的上傳報告與對話紀錄的安全性如何保障？<span class="arrow">▼</span></div>
-          <div class="faq-a">我們非常重視您的數據隱私與商業機密安全：
-            <br>• <b>帳戶隔離</b>：所有用戶的上傳記錄與對話歷史均與其帳號 Session 綁定，其他用戶無法跨權限存取。
-            <br>• <b>本地化運行</b>：我們的 FinBERT 推理與大語言模型（如 Qwen-2.5-7B）皆部署於本地伺服器運行，報告書內容與對話紀錄絕不會上傳給外部公有雲 API，確保您的敏感資料完全留存在受控環境中。
-          </div>
+        <div class="faq-item anim">
+          <div class="faq-q">數據安全如何保障？<span class="chv">＋</span></div>
+          <div class="faq-a">所有模型（FinBERT + Qwen-2.5-7B）皆部署於本地伺服器，報告與對話紀錄絕不上傳外部雲端。帳戶 Session 隔離確保跨權限存取不可能發生。</div>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Footer -->
-  <footer class="landing-footer">
+  <footer class="footer">
+    <div class="footer-brand"><span>🌿</span><span>Eco Trust AI</span></div>
     <p>© 2026 Eco Trust AI — ESG 永續誠信分析平台 · Powered by FinBERT</p>
+    <div class="footer-links">
+      <a href="/eco_sys/login.php">登入</a>
+      <a href="#timeline">流程</a>
+      <a href="#pricing">方案</a>
+      <a href="#faq">FAQ</a>
+    </div>
   </footer>
 
-  <!-- HUD Script -->
-  <script src="/eco_sys/assets/js/hud-bg.js"></script>
+  <!-- ═══ SCRIPT ═══ -->
   <script>
-    // Nav scroll effect
-    window.addEventListener('scroll', () => {
-      document.getElementById('landingNav').classList.toggle('scrolled', window.scrollY > 50);
-    });
+  (function() {
+    'use strict';
 
-    // FAQ Toggle
+    /* ── Nav scroll ── */
+    const nav = document.getElementById('mainNav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 30);
+    }, { passive: true });
+
+    /* ── Generic scroll reveal ── */
+    const animEls = document.querySelectorAll('.anim, .anim-scale');
+    const revealObs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('show');
+          revealObs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+    animEls.forEach(el => revealObs.observe(el));
+
+    /* ── Hero parallax ── */
+    const hero = document.querySelector('.hero');
+    const heroBgContainer = document.getElementById('heroBgContainer');
+    const sharpLayer = document.querySelector('.hero-bg-sharp');
+    const blurLayer = document.querySelector('.hero-bg-blur');
+    const scrollInd = document.querySelector('.scroll-ind');
+    const heroEls = hero.querySelectorAll('.hero-enter');
+    
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      const hH = hero.offsetHeight || 800;
+      if (y > hH + 50) return;
+      const p = Math.min(1, Math.max(0, y / hH));
+      
+      // Text elements parallax (fade & vertical movement)
+      const op = Math.max(0, 1 - p * 1.5);
+      const sc = Math.max(.9, 1 - p * .08);
+      const ty = y * .3;
+      heroEls.forEach(el => {
+        el.style.opacity = op;
+        el.style.transform = `translateY(${ty}px) scale(${sc})`;
+      });
+
+      // Background container animation (GPU-accelerated opacity & transform)
+      if (heroBgContainer) {
+        const bgY = y * 0.15;
+        const bgScale = 1 + p * 0.05;
+        const bgOp = Math.max(0, 1 - p * 1.25);
+        heroBgContainer.style.opacity = bgOp;
+        heroBgContainer.style.transform = `translateY(${bgY}px) scale(${bgScale})`;
+      }
+
+      // Layered blur crossfade (No dynamically recalculated filter on scroll = extremely smooth!)
+      if (sharpLayer && blurLayer) {
+        const blurProgress = Math.min(1, p * 2.0); // Reach full blur at 50% scroll
+        blurLayer.style.opacity = blurProgress;
+        sharpLayer.style.opacity = 1 - blurProgress;
+      }
+
+      // Scroll indicator fade & parallax (stays centered horizontally)
+      if (scrollInd) {
+        const scrollIndOp = Math.max(0, 1 - y / 120);
+        scrollInd.style.opacity = scrollIndOp;
+        scrollInd.style.transform = `translate(-50%, ${y * 0.25}px)`;
+      }
+    }, { passive: true });
+
+    /* ── TIMELINE — scroll-driven progress & node activation ── */
+    const tlWrap = document.getElementById('timelineWrap');
+    const tlNodes = document.querySelectorAll('.tl-node');
+
+    function updateTimeline() {
+      if (!tlWrap) return;
+
+      const wrapRect = tlWrap.getBoundingClientRect();
+      const wrapTop = wrapRect.top + window.scrollY;
+      const wrapH = tlWrap.offsetHeight;
+
+      // How far we've scrolled into the timeline section
+      const scrollInto = window.scrollY + window.innerHeight * 0.5 - wrapTop;
+      const progress = Math.max(0, Math.min(1, scrollInto / wrapH));
+
+      // 1. Redraw and animate S-curve SVG dynamically
+      const svg = document.getElementById('timelineSvg');
+      const track = document.getElementById('svgTrack');
+      const progressPath = document.getElementById('svgProgress');
+      const dots = document.querySelectorAll('.tl-dot');
+
+      if (svg && track && progressPath && dots.length > 0) {
+        let points = [];
+        
+        // Start point at top center
+        points.push({ x: wrapRect.width / 2, y: 0 });
+
+        // Grab current coordinates of each dot relative to the wrapper
+        dots.forEach(dot => {
+          const dotRect = dot.getBoundingClientRect();
+          const x = dotRect.left + dotRect.width / 2 - wrapRect.left;
+          const y = dotRect.top + dotRect.height / 2 - wrapRect.top;
+          points.push({ x, y });
+        });
+
+        // End point at bottom center
+        points.push({ x: wrapRect.width / 2, y: wrapRect.height });
+
+        // Build S-curve bezier path string
+        let d = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+          const p0 = points[i];
+          const p1 = points[i + 1];
+          // Use cubic bezier control points for smooth serpentine flow
+          const cpY1 = p0.y + (p1.y - p0.y) * 0.5;
+          const cpY2 = cpY1;
+          d += ` C ${p0.x} ${cpY1}, ${p1.x} ${cpY2}, ${p1.x} ${p1.y}`;
+        }
+
+        track.setAttribute('d', d);
+        progressPath.setAttribute('d', d);
+
+        // Animate the progress path along the S-curve
+        const pathLength = progressPath.getTotalLength();
+        progressPath.style.strokeDasharray = pathLength;
+        progressPath.style.strokeDashoffset = pathLength * (1 - progress);
+      }
+
+      // 2. Activate nodes
+      tlNodes.forEach(node => {
+        const nodeRect = node.getBoundingClientRect();
+        const nodeMid = nodeRect.top + nodeRect.height * 0.3;
+        if (nodeMid < window.innerHeight * 0.7) {
+          node.classList.add('active');
+        }
+      });
+    }
+
+    window.addEventListener('scroll', updateTimeline, { passive: true });
+    window.addEventListener('resize', updateTimeline, { passive: true });
+    // Initial check
+    setTimeout(updateTimeline, 100);
+
+    /* ── FAQ toggle ── */
     document.querySelectorAll('.faq-q').forEach(q => {
       q.addEventListener('click', () => {
         const item = q.parentElement;
@@ -974,25 +1254,19 @@ if (!empty($_SESSION['user'])) {
       });
     });
 
-    // Animate on scroll
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((e, i) => {
-        if (e.isIntersecting) {
-          setTimeout(() => e.target.classList.add('visible'), i * 100);
-          obs.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.15 });
-    document.querySelectorAll('.aos').forEach(el => obs.observe(el));
-
-    // Smooth scroll for nav links
+    /* ── Smooth scroll ── */
     document.querySelectorAll('a[href^="#"]').forEach(a => {
       a.addEventListener('click', e => {
         e.preventDefault();
         const t = document.querySelector(a.getAttribute('href'));
-        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (t) {
+          const top = t.getBoundingClientRect().top + window.pageYOffset - 56;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
       });
     });
+
+  })();
   </script>
 </body>
 

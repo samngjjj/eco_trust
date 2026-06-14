@@ -215,32 +215,42 @@ $history = $db->query($historySql)->fetch_all(MYSQLI_ASSOC);
     // 格式："Wed, 17 Dec 2025 ..." 或 "17 Dec 2025"
     const m1 = pub.match(/(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})/);
     if (m1) return { year: parseInt(m1[3]), month: MONTH_EN[m1[2]] || 0 };
-    // 格式："2025-09-10"
-    const m2 = pub.match(/(\d{4})-(\d{2})/);
+    // 格式："2025-09-10" 或 "2025/09/10"
+    const m2 = pub.match(/(\d{4})[-/](\d{2})/);
     if (m2) return { year: parseInt(m2[1]), month: parseInt(m2[2]) };
     // 格式："2025年9月"
     const m3 = pub.match(/(\d{4})年(\d{1,2})月/);
     if (m3) return { year: parseInt(m3[1]), month: parseInt(m3[2]) };
+    // 嘗試使用 JS 原生 Date 解析作為備份
+    const d = new Date(pub);
+    if (!isNaN(d.getTime())) {
+      return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    }
     return { year: fallbackYear || 0, month: 0 };
   }
   function getNewsYear(n) {
     const ry = parseInt(n.report_year);
     if (ry > 2000) return ry;
-    return parsePubDate(n.published, 0).year || 0;
+    const pubYear = parseInt(parsePubDate(n.published, 0).year);
+    if (pubYear > 2000) return pubYear;
+    return 0;
   }
 
   // ── 年份篩選 ──
   function filterByYear(year) {
-    _currentYear = year;
-    document.querySelectorAll('.year-tab').forEach(t =>
-      t.classList.toggle('active', parseInt(t.dataset.year) === year || (year === 0 && t.dataset.year === '0'))
-    );
-    document.querySelectorAll('.year-stat-row').forEach(r =>
-      r.classList.toggle('active', parseInt(r.dataset.year) === year)
-    );
+    const targetYear = parseInt(year) || 0;
+    _currentYear = targetYear;
+    document.querySelectorAll('.year-tab').forEach(t => {
+      const ty = parseInt(t.dataset.year) || 0;
+      t.classList.toggle('active', ty === targetYear);
+    });
+    document.querySelectorAll('.year-stat-row').forEach(r => {
+      const ry = parseInt(r.dataset.year) || 0;
+      r.classList.toggle('active', ry === targetYear);
+    });
     // 篩選時也用 getNewsYear 回退
-    const filtered = year === 0 ? _allNews : _allNews.filter(n => getNewsYear(n) === year);
-    renderNewsByMonth(filtered, year);
+    const filtered = targetYear === 0 ? _allNews : _allNews.filter(n => getNewsYear(n) === targetYear);
+    renderNewsByMonth(filtered, targetYear);
     const pos = filtered.filter(n => n.sentiment === 'Positive').length;
     const neg = filtered.filter(n => n.sentiment === 'Negative').length;
     const neu = filtered.length - pos - neg;

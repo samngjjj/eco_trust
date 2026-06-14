@@ -103,6 +103,13 @@ while ($row = $roeRes->fetch_assoc()) {
         $availableQuarters[] = $period;
     }
 
+    if ($startQ !== '' && $period < $startQ) {
+        continue;
+    }
+    if ($endQ !== '' && $period > $endQ) {
+        continue;
+    }
+
     if (!isset($roeTrend[$cid])) {
         $roeTrend[$cid] = [
             'code' => $cid,

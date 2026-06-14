@@ -18,10 +18,31 @@ if (is_dir($mdDir)) {
             if (!isset($validCombos[$company])) {
                 $validCombos[$company] = [];
             }
-            $validCombos[$company][] = $year;
+            if (!in_array($year, $validCombos[$company])) {
+                $validCombos[$company][] = $year;
+            }
         }
     }
 }
+
+// 額外掃描已上傳的 PDF 檔案 (uploads/)
+$uploadsDir = __DIR__ . '/uploads';
+if (is_dir($uploadsDir)) {
+    foreach (glob($uploadsDir . "/*.pdf") as $file) {
+        $basename = basename($file, ".pdf");
+        if (preg_match('/^(\d+_.+)_(\d{4})$/', $basename, $matches)) {
+            $company = $matches[1];
+            $year = $matches[2];
+            if (!isset($validCombos[$company])) {
+                $validCombos[$company] = [];
+            }
+            if (!in_array($year, $validCombos[$company])) {
+                $validCombos[$company][] = $year;
+            }
+        }
+    }
+}
+
 foreach ($validCombos as $c => &$years) {
     rsort($years);
 }
@@ -35,8 +56,9 @@ ksort($validCombos);
   <title>AI 智能顧問 — Eco Trust AI</title>
   <link rel="stylesheet" href="/eco_sys/assets/css/main.css">
 
-  <!-- PDF.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- PDF.js Local -->
+  <script src="/eco_sys/assets/js/pdf.min.js"></script>
+
 
   <style>
     /* ====== Premium Chat Interface + PDF Viewer Layout ====== */
@@ -747,6 +769,33 @@ ksort($validCombos);
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="/eco_sys/assets/js/app.js"></script>
   <script>
+  // Capture client-side errors and log them to the backend
+  window.onerror = function(message, source, lineno, colno, error) {
+    fetch('/eco_sys/api/log_error.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'onerror',
+        message: message,
+        source: source,
+        lineno: lineno,
+        colno: colno,
+        stack: error ? error.stack : ''
+      })
+    }).catch(() => {});
+  };
+  window.onunhandledrejection = function(event) {
+    fetch('/eco_sys/api/log_error.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'unhandledrejection',
+        reason: event.reason ? (event.reason.message || event.reason.toString()) : '',
+        stack: event.reason ? event.reason.stack : ''
+      })
+    }).catch(() => {});
+  };
+
   document.addEventListener('DOMContentLoaded', () => {
     // ═══════════════════════════════════════════
     //  Chat Logic (preserved from original)
@@ -835,10 +884,13 @@ ksort($validCombos);
       html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color:#00B0FF">$1</a>');
 
       // ── Page Citation Tags ──
-      // [p.XX] → clickable page citation
+      // [p.XX] or 【第XX頁】 or 第XX頁 → clickable page citation
       html = html.replace(
-        /\[p\.(\d+)\]/g,
-        '<a class="page-citation" data-page="$1" title="跳轉至原文第 $1 頁">p.$1</a>'
+        /【第\s*(\d+)\s*頁】|\[p\.\s*(\d+)\s*\]|第\s*(\d+)\s*頁/g,
+        (match, p1, p2, p3) => {
+          const page = p1 || p2 || p3;
+          return `<a class="page-citation" data-page="${page}" title="跳轉至原文第 ${page} 頁">第${page}頁</a>`;
+        }
       );
 
       // [資料庫] → database source tag
@@ -951,15 +1003,15 @@ ksort($validCombos);
           appendMessage('system', '❌ 發生錯誤: ' + data.error);
         } else {
           appendMessage('system', data.reply);
-          history.push({role: 'system', content: data.reply});
+          history.push({role: 'assistant', content: data.reply});
 
           // Auto-load PDF and auto-jump to the first page cited in reply
           if (data.pdf_file) {
             currentPdfFile = data.pdf_file;
             
-            // Extract the first page citation [p.XX] from the reply
-            const citationMatch = data.reply.match(/\[p\.(\d+)\]/);
-            const firstPage = citationMatch ? parseInt(citationMatch[1], 10) : null;
+            // Extract the first page citation from the reply
+            const citationMatch = data.reply.match(/【第\s*(\d+)\s*頁】|\[p\.\s*(\d+)\s*\]|第\s*(\d+)\s*頁/);
+            const firstPage = citationMatch ? parseInt(citationMatch[1] || citationMatch[2] || citationMatch[3], 10) : null;
             
             loadPdf(currentPdfFile).then(() => {
               if (firstPage !== null) {
@@ -992,7 +1044,7 @@ ksort($validCombos);
     // ═══════════════════════════════════════════
     const pdfPanel = document.getElementById('pdfPanel');
     const chatPanel = document.getElementById('chatPanel');
-    const pdfCanvas = document.getElementById('pdfCanvas');
+    let pdfCanvas = document.getElementById('pdfCanvas');
     const pdfCanvasWrapper = document.getElementById('pdfCanvasWrapper');
     const pdfPageIndicator = document.getElementById('pdfPageIndicator');
     const pdfPrevBtn = document.getElementById('pdfPrevBtn');
@@ -1005,7 +1057,7 @@ ksort($validCombos);
     const pdfZoomIndicator = document.getElementById('pdfZoomIndicator');
 
     // Configure PDF.js worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/eco_sys/assets/js/pdf.worker.min.js';
 
     let pdfDoc = null;
     let currentPage = 1;
@@ -1014,6 +1066,7 @@ ksort($validCombos);
     let pendingPage = null;
     let currentLoadedPdf = '';
     let zoomScaleMultiplier = 1.0;
+
 
     async function loadPdf(filename) {
       if (!filename) return;
@@ -1029,6 +1082,12 @@ ksort($validCombos);
 
       // Clear any previous error message and restore canvas
       pdfCanvasWrapper.innerHTML = '';
+      // Re-create canvas if it was destroyed by previous innerHTML assignment
+      if (!document.getElementById('pdfCanvas')) {
+        const c = document.createElement('canvas');
+        c.id = 'pdfCanvas';
+        pdfCanvas = c;
+      }
       pdfCanvasWrapper.appendChild(pdfCanvas);
 
       // Reset zoom scale to 100% on new PDF load
@@ -1037,7 +1096,26 @@ ksort($validCombos);
 
       try {
         const url = `/eco_sys/api/serve_pdf.php?file=${encodeURIComponent(filename)}`;
-        const loadingTask = pdfjsLib.getDocument(url);
+
+        // Pre-flight: verify the server actually returns a PDF
+        // (catches auth redirects that would silently serve HTML)
+        const probe = await fetch(url, { method: 'HEAD', credentials: 'same-origin' });
+        if (!probe.ok) {
+          let errMsg = `HTTP ${probe.status}`;
+          try {
+            // Try to read error JSON from a GET (HEAD has no body)
+            const errResp = await fetch(url, { credentials: 'same-origin' });
+            const errData = await errResp.json();
+            errMsg = errData.error || errMsg;
+          } catch (_) { /* ignore */ }
+          throw new Error(errMsg);
+        }
+        const ct = probe.headers.get('content-type') || '';
+        if (!ct.includes('application/pdf')) {
+          throw new Error('伺服器未回傳 PDF（可能需要重新登入）');
+        }
+
+        const loadingTask = pdfjsLib.getDocument({ url, withCredentials: true });
         pdfDoc = await loadingTask.promise;
         totalPages = pdfDoc.numPages;
         currentPage = 1;
@@ -1046,17 +1124,25 @@ ksort($validCombos);
         await renderPage(currentPage);
       } catch (err) {
         console.error('PDF load error:', err);
+        pdfDoc = null;
+        currentLoadedPdf = '';
+        const escapedFilename = filename.replace(/</g, '&lt;').replace(/>/g, '&gt;');
         pdfCanvasWrapper.innerHTML = `<div style="color:#ff4757; text-align:center; padding:2rem;">
           <div style="font-size:2rem; margin-bottom:1rem;">⚠️</div>
           <div>PDF 載入失敗</div>
-          <div style="font-size:0.8rem; color:#999; margin-top:0.5rem;">${filename}</div>
-          <div style="font-size:0.75rem; color:#666; margin-top:0.5rem;">${err.message || ''}</div>
+          <div style="font-size:0.8rem; color:#999; margin-top:0.5rem;">${escapedFilename}</div>
+          <div style="font-size:0.75rem; color:#666; margin-top:0.5rem;">${(err.message || '').replace(/</g, '&lt;')}</div>
+          <button onclick="loadPdf('${filename.replace(/'/g, "\\'")}')"
+                  style="margin-top:1rem; padding:0.5rem 1.2rem; background:rgba(0,230,118,0.15);
+                         border:1px solid rgba(0,230,118,0.4); color:#00e676; border-radius:6px;
+                         cursor:pointer; font-size:0.85rem;">🔄 重試</button>
         </div>`;
-        pdfCanvasWrapper.appendChild(pdfCanvas);
       } finally {
         pdfLoading.style.display = 'none';
       }
     }
+    // Expose loadPdf globally so the retry button onclick can call it
+    window.loadPdf = loadPdf;
 
     async function renderPage(pageNum) {
       if (!pdfDoc) return;
@@ -1068,13 +1154,29 @@ ksort($validCombos);
 
       try {
         const page = await pdfDoc.getPage(pageNum);
-        const wrapperWidth = pdfCanvasWrapper.clientWidth - 32; // minus padding
+        
+        let wrapperWidth = pdfCanvasWrapper.clientWidth - 32; // minus padding
+        if (wrapperWidth <= 100) {
+          // Fallback to parent container width if panel is still animating open (width 0)
+          const container = document.querySelector('.chat-pdf-container');
+          if (container && container.clientWidth > 0) {
+            wrapperWidth = (container.clientWidth * 0.42) - 32;
+          }
+          if (wrapperWidth <= 100) {
+            wrapperWidth = 800; // hard fallback
+          }
+        }
+
         const unscaledViewport = page.getViewport({ scale: 1 });
         const autoScale = wrapperWidth / unscaledViewport.width;
-        const scale = autoScale * zoomScaleMultiplier;
+        const scale = Math.max(0.1, autoScale * zoomScaleMultiplier);
         const viewport = page.getViewport({ scale: scale });
 
         const canvas = pdfCanvas;
+        if (!pdfCanvasWrapper.contains(canvas)) {
+          pdfCanvasWrapper.innerHTML = '';
+          pdfCanvasWrapper.appendChild(canvas);
+        }
         const ctx = canvas.getContext('2d');
         canvas.height = viewport.height;
         canvas.width = viewport.width;
@@ -1084,6 +1186,16 @@ ksort($validCombos);
         updatePageIndicator();
       } catch (err) {
         console.error('Render error:', err);
+        // Log rendering error to backend for diagnostics
+        fetch('/eco_sys/api/log_error.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'render_error',
+            message: err.message || err.toString(),
+            stack: err.stack || ''
+          })
+        }).catch(() => {});
       } finally {
         rendering = false;
         if (pendingPage !== null) {
