@@ -239,6 +239,7 @@ ksort($validCombos);
       padding: 1rem;
       gap: 0.5rem;
       background: rgba(0, 0, 0, 0.3);
+      cursor: grab;
     }
 
     .pdf-canvas-wrapper::-webkit-scrollbar {
@@ -389,6 +390,13 @@ ksort($validCombos);
 
     .user-msg { align-self: flex-end; }
     .system-msg { align-self: flex-start; }
+    .info-msg { align-self: flex-start; }
+    .info-msg .msg-content {
+      background: rgba(255, 159, 67, 0.08);
+      border: 1px solid rgba(255, 159, 67, 0.25);
+      color: #ffe0b2;
+      border-bottom-left-radius: 0;
+    }
 
     .msg-content {
       padding: 1rem 1.25rem;
@@ -446,7 +454,6 @@ ksort($validCombos);
       margin: 0 1px;
       font-variant-numeric: tabular-nums;
       position: relative;
-      user-select: none;
     }
 
     .page-citation::before {
@@ -480,23 +487,39 @@ ksort($validCombos);
     .db-citation {
       display: inline-flex;
       align-items: center;
-      gap: 2px;
-      background: rgba(41, 121, 255, 0.1);
-      border: 1px solid rgba(41, 121, 255, 0.35);
-      color: #64b5f6 !important;
-      padding: 1px 7px;
-      border-radius: 10px;
+      gap: 5px;
+      background: rgba(0, 120, 255, 0.05);
+      border: 1px solid #0056b3;
+      color: #5cbbf6 !important;
+      padding: 1px 8px;
+      border-radius: 20px;
       font-size: 0.75rem;
       font-weight: 600;
       text-decoration: none !important;
-      vertical-align: super;
-      line-height: 1;
-      margin: 0 1px;
+      vertical-align: middle;
+      line-height: 1.2;
+      margin: 0 3px;
     }
 
-    .db-citation::before {
-      content: '🗄️';
-      font-size: 0.6rem;
+    .db-icon {
+      width: 10px;
+      height: 12px;
+      background: linear-gradient(to bottom, #9c27b0 0%, #7b1fa2 100%);
+      border-radius: 2px;
+      position: relative;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .db-icon::before {
+      content: '';
+      position: absolute;
+      width: 6px;
+      height: 1.5px;
+      background: rgba(255, 255, 255, 0.8);
+      left: 2px;
+      top: 3px;
+      box-shadow: 0 4px 0 rgba(255, 255, 255, 0.8);
     }
 
     /* Unknown source tag */
@@ -521,6 +544,91 @@ ksort($validCombos);
       content: '⚠️';
       font-size: 0.6rem;
     }
+
+    /* News source tag */
+    .news-citation {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      background: rgba(0, 176, 255, 0.15);
+      border: 1px solid rgba(0, 176, 255, 0.35);
+      color: #00b0ff !important;
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-decoration: none !important;
+      vertical-align: super;
+      line-height: 1;
+      margin: 0 1px;
+      transition: all 0.2s;
+    }
+    .news-citation::before {
+      content: '📰';
+      font-size: 0.6rem;
+    }
+    .news-citation:hover {
+      background: rgba(0, 176, 255, 0.25);
+      border-color: rgba(0, 176, 255, 0.6);
+      box-shadow: 0 0 8px rgba(0, 176, 255, 0.2);
+    }
+
+    /* ── Demo Suggestion Buttons & Agent Console ── */
+    .demo-buttons-container {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      background: rgba(11, 14, 20, 0.7);
+      border-top: 1px solid rgba(41, 121, 255, 0.15);
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      border-bottom: 1px solid rgba(41, 121, 255, 0.1);
+    }
+    .btn-demo-suggest {
+      background: rgba(41, 121, 255, 0.08);
+      border: 1px solid rgba(41, 121, 255, 0.25);
+      color: #82b1ff;
+      padding: 0.35rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      user-select: none;
+    }
+    .btn-demo-suggest:hover {
+      background: rgba(0, 230, 118, 0.1);
+      border-color: rgba(0, 230, 118, 0.35);
+      color: #00e676;
+      box-shadow: 0 0 8px rgba(0, 230, 118, 0.15);
+    }
+    .btn-demo-suggest:active {
+      transform: translateY(1px);
+    }
+    .agent-console-log {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.78rem;
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(41, 121, 255, 0.15);
+      border-radius: 6px;
+      padding: 0.6rem;
+      margin-top: 0.5rem;
+      color: #00e676;
+      max-height: 150px;
+      overflow-y: auto;
+      line-height: 1.45;
+      text-align: left;
+    }
+    .agent-log-line {
+      margin-bottom: 3px;
+    }
+    .agent-log-line.info { color: #79a6ff; }
+    .agent-log-line.success { color: #00e676; }
+    .agent-log-line.warn { color: #ffb74d; }
+    .agent-log-line.think { color: #b0bec5; font-style: italic; }
 
     /* ── Chat Input ── */
     .chat-input-area {
@@ -637,6 +745,12 @@ ksort($validCombos);
       align-self: flex-end;
     }
 
+    .info-msg .msg-avatar {
+      background: rgba(255, 159, 67, 0.15);
+      border: 1px solid rgba(255, 159, 67, 0.4);
+      color: #ff9f43;
+    }
+
     /* ── Page Jump Toast ── */
     .page-jump-toast {
       position: fixed;
@@ -717,6 +831,19 @@ ksort($validCombos);
 
           <div id="chatBox" class="chat-box">
             <!-- Messages rendered here -->
+          </div>
+
+          <!-- ── Demo Suggestion Buttons Container ── -->
+          <div class="demo-buttons-container">
+            <button class="btn-demo-suggest" data-question="該公司近年來的 ROE 發生了什麼變化？">
+              <span>📊</span> 快速財務資料庫 (ROE 變化)
+            </button>
+            <button class="btn-demo-suggest" data-question="請幫我綜合整理公司近年來的財務 ROE 表現、報告書中提到的具體減碳行動與措施，以及近年相關的新聞輿情事件。">
+              <span>📑</span> 報告具體行動 (綜合整理 ROE、減碳與輿情)
+            </button>
+            <button class="btn-demo-suggest" data-question="綜合評估該公司在永續治理與環境策略上的整體表現與挑戰為何？">
+              <span>🧠</span> 抽象策略評估 (展示思考過程)
+            </button>
           </div>
 
           <div class="chat-input-area">
@@ -880,29 +1007,60 @@ ksort($validCombos);
       // Bold
       html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-      // Standard links
-      html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color:#00B0FF">$1</a>');
+      // Standard links (if text is "新聞" or "新聞連結", style it as a news citation tag)
+      html = html.replace(/\[(.*?)\]\((.*?)\)/g, (match, text, url) => {
+        if (text === '新聞' || text === '新聞連結' || text === '連結') {
+          return `<a href="${url}" target="_blank" class="news-citation">[新聞]</a>`;
+        }
+        return `<a href="${url}" target="_blank" style="color:#00B0FF">${text}</a>`;
+      });
 
-      // ── Page Citation Tags ──
-      // [p.XX] or 【第XX頁】 or 第XX頁 → clickable page citation
+      // [p.XX_COMP_YYYY] or [p.XX_YYYY] or [p.XX] or 【第XX頁】 or 第XX頁 → clickable page citation
       html = html.replace(
-        /【第\s*(\d+)\s*頁】|\[p\.\s*(\d+)\s*\]|第\s*(\d+)\s*頁/g,
-        (match, p1, p2, p3) => {
-          const page = p1 || p2 || p3;
-          return `<a class="page-citation" data-page="${page}" title="跳轉至原文第 ${page} 頁">第${page}頁</a>`;
+        /【第\s*(\d+)\s*頁】|\[p\.\s*(\d+)\s*(?:_(\d+))?(?:_(\d{4}))?\s*\]|第\s*(\d+)\s*頁/g,
+        (match, p1, p2, p3, p4, p5) => {
+          const page = p1 || p2 || p5;
+          let company = companySelect.value;
+          let y = null;
+          
+          if (p3 && p4) {
+            // Format: [p.page_companySymbol_year] e.g., [p.120_1103_2023]
+            const compSymbol = p3;
+            y = p4;
+            // Map the company symbol (e.g. 1103) to select option value (e.g. 1103_嘉泥)
+            const options = Array.from(companySelect.options);
+            const foundOpt = options.find(opt => opt.value.startsWith(compSymbol + '_'));
+            if (foundOpt) {
+              company = foundOpt.value;
+            }
+          } else if (p3) {
+            // Format: [p.page_year] e.g., [p.120_2023]
+            y = p3;
+          }
+          
+          if (y && company && company !== 'ALL_跨公司對比') {
+            const pdfFile = `${company}_${y}.pdf`;
+            return `<a class="page-citation" data-page="${page}" data-pdf="${pdfFile}" title="跳轉至 ${y} 年原文第 ${page} 頁">[p.${page} (${y})]</a>`;
+          }
+          return `<a class="page-citation" data-page="${page}" title="跳轉至原文第 ${page} 頁">[p.${page}]</a>`;
         }
       );
 
       // [資料庫] → database source tag
       html = html.replace(
         /\[資料庫\]/g,
-        '<span class="db-citation">資料庫</span>'
+        '<span class="db-citation"><span class="db-icon"></span>[資料庫]</span>'
       );
 
-      // [p.?] → unknown source tag
+      // [p.?_YYYY] or [p.?] → unknown source tag
       html = html.replace(
-        /\[p\.\?\]/g,
-        '<span class="unknown-citation">p.?</span>'
+        /\[p\.\?(?:_(\d{4}))?\]/g,
+        (match, year) => {
+          if (year) {
+            return `<span class="unknown-citation">[p.? (${year})]</span>`;
+          }
+          return '<span class="unknown-citation">[p.?]</span>';
+        }
       );
 
       // Newlines
@@ -946,6 +1104,21 @@ ksort($validCombos);
       sessionStorage.setItem('chat_pdf_file', currentPdfFile);
     }
 
+    // Demo Suggestion Buttons Click Handler
+    document.querySelectorAll('.btn-demo-suggest').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Ensure "歷年趨勢" (ALL) is selected if it's available
+        const allOption = Array.from(yearSelect.options).find(opt => opt.value === 'ALL');
+        if (allOption && yearSelect.value !== 'ALL') {
+          yearSelect.value = 'ALL';
+        }
+        
+        chatInput.value = btn.getAttribute('data-question');
+        chatInput.dispatchEvent(new Event('input')); // trigger auto-resize
+        sendMessage();
+      });
+    });
+
     resetBtn.addEventListener('click', () => {
       history = [];
       currentPdfFile = '';
@@ -974,6 +1147,38 @@ ksort($validCombos);
       chatInput.value = '';
       chatInput.style.height = 'auto';
 
+      // Helper function to check if the query is database-only
+      function isDatabaseOnlyQuery(queryText) {
+        const norm = queryText.toLowerCase();
+        // Keywords indicating financial database (ROE, etc.), ESG metrics/commitments database, or news database
+        const dbKeywords = [
+          'roe', '報酬率', '獲利', '淨利', '純益', 'eps', '每股盈餘', '營收', '利潤', '盈餘', '損益',
+          '信心分數', '信賴度', '誠信分數', '承諾', '量化比', '時限比', '信用分', '誠信信心', '信度',
+          '新聞', '輿情', '情感', '媒體', '報導', '新聞評價', '情緒'
+        ];
+        // Keywords that require full text PDF analysis (details, policies, actions)
+        const reportKeywords = [
+          '具體', '措施', '政策', '細節', '內容', '怎麼做', '哪些做法', '如何進行', '減碳項目', '環境政策', '治理政策', '實施', '行動方案'
+        ];
+        
+        const hasDb = dbKeywords.some(kw => norm.includes(kw));
+        const hasReport = reportKeywords.some(kw => norm.includes(kw));
+        
+        return hasDb && !hasReport;
+      }
+
+      // ⚠️ Warn user about multi-year analysis time
+      const isMultiYear = (year === 'ALL' && company !== 'ALL_跨公司對比');
+      const isDbOnly = isMultiYear && isDatabaseOnlyQuery(text);
+
+      if (isMultiYear) {
+          if (isDbOnly) {
+              appendMessage('info', '⚡ **快速資料庫查詢模式啟動**：檢測到您的問題與結構化數據相關，系統將直接讀取資料庫進行歷年趨勢分析，預計幾秒內完成...');
+          } else {
+              appendMessage('info', '📊 **歷年趨勢分析模式啟動**：系統將逐一針對各年度報告（財務、ESG、新聞）進行深入探索與獨立分析，最後彙整出完整趨勢。此過程需要多次呼叫大語言模型，預估需要 **1 至 2 分鐘**，請耐心等候...');
+          }
+      }
+
       // Show loading
       const loadingDiv = document.createElement('div');
       loadingDiv.className = 'message system-msg';
@@ -984,50 +1189,259 @@ ksort($validCombos);
       chatBox.appendChild(loadingDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
 
+      let consoleDiv = null;
+      let thoughtTimer = null;
+
       try {
-        const response = await fetch('/eco_sys/api/chat_api.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: text,
-            company: company,
-            year: year,
-            history: history.slice(0, -1)
-          })
-        });
+        let finalReply = '';
+        let finalPdfFile = '';
 
-        const data = await response.json();
-        chatBox.removeChild(loadingDiv);
+        // Create console log element inside the active message content
+        consoleDiv = document.createElement('div');
+        consoleDiv.className = 'agent-console-log';
+        loadingDiv.querySelector('.msg-content').appendChild(consoleDiv);
 
-        if (data.error) {
-          appendMessage('system', '❌ 發生錯誤: ' + data.error);
-        } else {
-          appendMessage('system', data.reply);
-          history.push({role: 'assistant', content: data.reply});
+        // Queue-based logging manager
+        const logQueue = [];
+        let isProcessingQueue = false;
 
-          // Auto-load PDF and auto-jump to the first page cited in reply
-          if (data.pdf_file) {
-            currentPdfFile = data.pdf_file;
-            
-            // Extract the first page citation from the reply
-            const citationMatch = data.reply.match(/【第\s*(\d+)\s*頁】|\[p\.\s*(\d+)\s*\]|第\s*(\d+)\s*頁/);
-            const firstPage = citationMatch ? parseInt(citationMatch[1] || citationMatch[2] || citationMatch[3], 10) : null;
-            
-            loadPdf(currentPdfFile).then(() => {
-              if (firstPage !== null) {
-                // Delay slightly to ensure panel slides open and rendering completes
-                setTimeout(() => {
-                  jumpToPage(firstPage);
-                }, 300);
-              }
-            });
-          }
-          saveHistory();
+        function queueLog(msg, type = 'info') {
+          logQueue.push({ msg, type });
+          processLogQueue();
         }
 
+        function processLogQueue() {
+          if (isProcessingQueue) return;
+          if (logQueue.length === 0) return;
+          
+          isProcessingQueue = true;
+          const item = logQueue.shift();
+          
+          const line = document.createElement('div');
+          line.className = `agent-log-line ${item.type}`;
+          let prefix = '';
+          if (item.type === 'info') prefix = '[Agent Tool] ';
+          else if (item.type === 'success') prefix = '[Agent Success] ';
+          else if (item.type === 'warn') prefix = '[Agent Warning] ';
+          else if (item.type === 'think') prefix = '[Agent Brain] 🤔 ';
+          
+          line.textContent = `${prefix}${item.msg}`;
+          consoleDiv.appendChild(line);
+          consoleDiv.scrollTop = consoleDiv.scrollHeight;
+          
+          // Smooth scrolling of the main chat container
+          chatBox.scrollTop = chatBox.scrollHeight;
+
+          setTimeout(() => {
+            isProcessingQueue = false;
+            processLogQueue();
+          }, 450); // Steady sentence-by-sentence delay (450ms)
+        }
+
+        async function flushLogs() {
+          while (logQueue.length > 0 || isProcessingQueue) {
+            await new Promise(r => setTimeout(r, 100));
+          }
+        }
+
+        // Active thinking log generator for API calls
+        const simulatedThoughts = [
+          "正在分析範疇一與範疇二之溫室氣體絕對排放量數據...",
+          "正在核實減碳承諾是否具備明確的量化百分比與時間表...",
+          "正在比對資料庫季度 ROE 財務走勢與 ESG 投資效益...",
+          "正在過濾新聞輿情，分析市場對該公司誠信表現之真實回饋...",
+          "正在對 ESG 報告書原文相關章節進行關聯性交叉審計...",
+          "正在評估董事會獨立性與氣候風險治理架構之完備度..."
+        ];
+        let thoughtIndex = 0;
+        thoughtTimer = setInterval(() => {
+          if (logQueue.length === 0 && !isProcessingQueue) {
+            const t = simulatedThoughts[thoughtIndex % simulatedThoughts.length];
+            queueLog(t, 'think');
+            thoughtIndex++;
+          }
+        }, 3200);
+
+        if (isMultiYear) {
+          if (isDbOnly) {
+              // ── Fast Database-Only Flow ──
+              queueLog('啟動快速資料庫查詢代理流程...', 'info');
+              queueLog(`識別問題屬性：結構化數據檢索 (${text})`, 'think');
+              queueLog('正在連接 MariaDB 數據庫...', 'info');
+              queueLog(`查詢公司 [${company}] 歷年季度財務 ROE 指標...`, 'info');
+              queueLog(`查詢公司 [${company}] 歷年 ESG 誠信可靠性指標...`, 'info');
+              queueLog(`查詢公司 [${company}] 歷年相關輿情與新聞...`, 'info');
+
+              const response = await fetch('/eco_sys/api/chat_api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  message: text,
+                  company: company,
+                  year: 'ALL',
+                  history: history.slice(0, -1)
+                })
+              });
+              
+              queueLog('資料庫檢索成功，正在將歷年數據送交 Ollama 進行單次整合歸納...', 'info');
+              const data = await response.json();
+              if (data.error) throw new Error(data.error);
+              queueLog('Ollama 整合分析成功，已生成最終報告！', 'success');
+              
+              finalReply = data.reply;
+              if (data.pdf_file) finalPdfFile = data.pdf_file;
+          } else {
+              // ── Map-Reduce Multi-Year Orchestration ──
+              queueLog('啟動 Map-Reduce 多年度報告分析代理流程...', 'info');
+              queueLog(`識別問題屬性：非結構化 PDF 原文分析 (${text})`, 'think');
+              queueLog('執行 get_available_years 獲取可分析年度...', 'info');
+
+              // 2. Fetch available years
+              const yearsResp = await fetch('/eco_sys/api/chat_api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'get_available_years', company: company })
+              });
+              const yearsData = await yearsResp.json();
+              if (yearsData.error) throw new Error(yearsData.error);
+              const availableYears = yearsData.years || [];
+              if (availableYears.length === 0) throw new Error("無可用年度之報告資料。");
+
+              queueLog(`檢測到可用年份：[${availableYears.join(', ')}]，開啟並行子任務探針...`, 'info');
+
+              // 3. Trigger concurrent fetches for all available years
+              const analyses = [];
+              const promises = availableYears.map(async (y) => {
+                queueLog(`正在並行載入 ${y} 年報告特徵與 N-gram 相關度匹配...`, 'info');
+                queueLog(`[並行發送 ${y} 年] 正在向 LLM 發送並行子任務分析...`, 'think');
+                
+                const yearResp = await fetch('/eco_sys/api/chat_api.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'analyze_year',
+                    company: company,
+                    year: y,
+                    message: text,
+                    history: history.slice(0, -1)
+                  })
+                });
+                const yearData = await yearResp.json();
+                if (yearData.error) throw new Error(`${y} 年並行分析失敗: ${yearData.error}`);
+                
+                queueLog(`[並行子任務 ${y} 年] 完成分析並成功回傳！`, 'success');
+                return { year: y, reply: yearData.reply, pdf_file: yearData.pdf_file };
+              });
+
+              // Wait for all fetches to resolve in parallel
+              const results = await Promise.all(promises);
+
+              // Sort results by year to preserve chronological order in final report
+              results.sort((a, b) => a.year - b.year);
+              results.forEach(res => {
+                analyses.push({ year: res.year, reply: res.reply });
+                if (res.pdf_file) finalPdfFile = res.pdf_file;
+              });
+
+              // 4. Synthesize all analyses
+              queueLog('所有年度子任務完成！正在將各年分析結果與來源標籤進行歷年綜合對比...', 'think');
+              queueLog('向 Ollama 發送最終整合 (Synthesize) 任務請求...', 'info');
+              
+              const synthResp = await fetch('/eco_sys/api/chat_api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'synthesize',
+                  company: company,
+                  message: text,
+                  analyses: analyses
+                })
+              });
+              const synthData = await synthResp.json();
+              if (synthData.error) throw new Error(synthData.error);
+              
+              queueLog('歷年綜合對比與來源標註整理完畢！', 'success');
+              finalReply = synthData.reply;
+          }
+
+        } else {
+          // ── Normal Single-Year Flow ──
+          queueLog('啟動單一年度報告與數據分析流程...', 'info');
+          queueLog(`識別問題屬性：單年 ESG 暨財務狀況綜合評析`, 'think');
+          queueLog('正在連接 MariaDB 數據庫...', 'info');
+          queueLog(`查詢公司 [${company}] ${year} 年度財務指標與 ROE 數據...`, 'info');
+          queueLog(`查詢公司 [${company}] ${year} 年度 ESG 誠信與減碳承諾指標...`, 'info');
+          queueLog(`查詢公司 [${company}] ${year} 年度市場新聞輿情數據...`, 'info');
+          queueLog('檢索本地 ESG 報告 PDF 原文相關頁面...', 'info');
+          queueLog('正在向 Ollama 發送推理與評估請求...', 'think');
+
+          const response = await fetch('/eco_sys/api/chat_api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: text,
+              company: company,
+              year: year,
+              history: history.slice(0, -1)
+            })
+          });
+
+          const data = await response.json();
+          if (data.error) throw new Error(data.error);
+          
+          queueLog('分析完成，已生成最終評估報告！', 'success');
+          finalReply = data.reply;
+          if (data.pdf_file) finalPdfFile = data.pdf_file;
+        }
+
+        clearInterval(thoughtTimer);
+        await flushLogs();
+
+        const indicator = loadingDiv.querySelector('.typing-indicator');
+        if (indicator) indicator.remove();
+
+        const responseTextDiv = document.createElement('div');
+        responseTextDiv.className = 'agent-response-text';
+        responseTextDiv.style.marginTop = '1rem';
+        responseTextDiv.innerHTML = formatMarkdown(finalReply);
+        loadingDiv.querySelector('.msg-content').appendChild(responseTextDiv);
+
+        history.push({role: 'assistant', content: finalReply});
+
+        // Auto-load PDF and auto-jump to the first page cited in reply
+        if (finalPdfFile) {
+          currentPdfFile = finalPdfFile;
+          
+          // Extract the first page citation from the reply
+          const citationMatch = finalReply.match(/【第\s*(\d+)\s*頁】|\[p\.\s*(\d+)\s*(?:_\d{4})?\]|第\s*(\d+)\s*頁/);
+          const firstPage = citationMatch ? parseInt(citationMatch[1] || citationMatch[2] || citationMatch[3], 10) : null;
+          
+          loadPdf(currentPdfFile).then(() => {
+            if (firstPage !== null) {
+              // Delay slightly to ensure panel slides open and rendering completes
+              setTimeout(() => {
+                jumpToPage(firstPage);
+              }, 300);
+            }
+          });
+        }
+        saveHistory();
+
       } catch (err) {
-        chatBox.removeChild(loadingDiv);
-        appendMessage('system', '❌ 系統連線異常，請檢查本地端 Ollama 服務是否正常運作。');
+        if (thoughtTimer) clearInterval(thoughtTimer);
+        const indicator = loadingDiv.querySelector('.typing-indicator');
+        if (indicator) indicator.remove();
+        
+        if (consoleDiv) {
+          const errDiv = document.createElement('div');
+          errDiv.className = 'agent-log-line warn';
+          errDiv.textContent = `[Agent Error] ❌ 發生錯誤: ${err.message}`;
+          consoleDiv.appendChild(errDiv);
+        } else {
+          appendMessage('system', '❌ 發生錯誤: ' + err.message);
+        }
+        
+        chatBox.scrollTop = chatBox.scrollHeight;
       }
     }
 
@@ -1225,7 +1639,11 @@ ksort($validCombos);
       document.querySelectorAll('.page-jump-toast').forEach(el => el.remove());
       const toast = document.createElement('div');
       toast.className = 'page-jump-toast';
-      toast.textContent = `📄 已跳轉至第 ${page} 頁`;
+      if (typeof page === 'number' || !isNaN(page)) {
+        toast.textContent = `📄 已跳轉至第 ${page} 頁`;
+      } else {
+        toast.textContent = `📄 ${page}`;
+      }
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 2000);
     }
@@ -1272,26 +1690,29 @@ ksort($validCombos);
     let isDragging = false;
     let startX, startY, scrollLeftStart, scrollTopStart;
 
-    pdfCanvas.addEventListener('mousedown', (e) => {
+    pdfCanvasWrapper.addEventListener('mousedown', (e) => {
       if (e.button !== 0) return; // Only left click
       isDragging = true;
-      pdfCanvas.style.cursor = 'grabbing';
+      pdfCanvasWrapper.style.cursor = 'grabbing';
+      if (pdfCanvas) pdfCanvas.style.cursor = 'grabbing';
       
-      startX = e.pageX - pdfCanvasWrapper.offsetLeft;
-      startY = e.pageY - pdfCanvasWrapper.offsetTop;
+      startX = e.pageX;
+      startY = e.pageY;
       scrollLeftStart = pdfCanvasWrapper.scrollLeft;
       scrollTopStart = pdfCanvasWrapper.scrollTop;
       
       e.preventDefault(); // Prevent default text selection/image drag
     });
 
+    pdfCanvasWrapper.addEventListener('dragstart', (e) => {
+      e.preventDefault();
+    });
+
     document.addEventListener('mousemove', (e) => {
       if (!isDragging) return;
       
-      const x = e.pageX - pdfCanvasWrapper.offsetLeft;
-      const y = e.pageY - pdfCanvasWrapper.offsetTop;
-      const walkX = x - startX;
-      const walkY = y - startY;
+      const walkX = e.pageX - startX;
+      const walkY = e.pageY - startY;
       
       pdfCanvasWrapper.scrollLeft = scrollLeftStart - walkX;
       pdfCanvasWrapper.scrollTop = scrollTopStart - walkY;
@@ -1300,7 +1721,8 @@ ksort($validCombos);
     document.addEventListener('mouseup', () => {
       if (isDragging) {
         isDragging = false;
-        pdfCanvas.style.cursor = 'grab';
+        pdfCanvasWrapper.style.cursor = 'grab';
+        if (pdfCanvas) pdfCanvas.style.cursor = 'grab';
       }
     });
 
@@ -1330,17 +1752,26 @@ ksort($validCombos);
       void citation.offsetWidth; // trigger reflow
       citation.classList.add('clicked');
 
-      // If PDF is not loaded yet, try to load it
-      if (!pdfDoc && currentPdfFile) {
-        loadPdf(currentPdfFile).then(() => {
+      const targetPdf = citation.dataset.pdf;
+
+      if (targetPdf && targetPdf !== currentLoadedPdf) {
+        // Dynamic PDF Switch
+        loadPdf(targetPdf).then(() => {
           setTimeout(() => jumpToPage(pageNum), 300);
         });
-      } else if (pdfDoc) {
-        openPdfPanel();
-        jumpToPage(pageNum);
       } else {
-        // No PDF available — show a hint
-        showPageJumpToast(`第 ${pageNum} 頁 (PDF 尚未載入)`);
+        // Normal behavior
+        if (!pdfDoc && (targetPdf || currentPdfFile)) {
+          loadPdf(targetPdf || currentPdfFile).then(() => {
+            setTimeout(() => jumpToPage(pageNum), 300);
+          });
+        } else if (pdfDoc) {
+          openPdfPanel();
+          jumpToPage(pageNum);
+        } else {
+          // No PDF available — show a hint
+          showPageJumpToast(`PDF 尚未載入 (無法跳轉至第 ${pageNum} 頁)`);
+        }
       }
     });
 

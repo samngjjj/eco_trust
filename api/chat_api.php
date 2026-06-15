@@ -92,19 +92,145 @@ function selectRelevantPages($pagesData, $query, $maxPages = 40) {
     
     return [$contextStr, $pageNums];
 }
+// ── 簡體轉繁體中文（台灣繁體，字形與用語轉換） ──
+function convertToTraditional($text) {
+    if (empty($text)) return $text;
+    $descriptorspec = array(
+       0 => array("pipe", "r"),
+       1 => array("pipe", "w"),
+       2 => array("pipe", "w")
+    );
+    $process = proc_open('python ' . __DIR__ . '/s2t.py', $descriptorspec, $pipes);
+    if (is_resource($process)) {
+        fwrite($pipes[0], $text);
+        fclose($pipes[0]);
+        $output = stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        $error = stream_get_contents($pipes[2]);
+        fclose($pipes[2]);
+        $returnValue = proc_close($process);
+        if ($returnValue === 0 && !empty($output)) {
+            return $output;
+        }
+    }
+    return $text;
+}
 
 try {
     $input = json_decode(file_get_contents('php://input'), true);
+    if (PHP_SAPI === 'cli' && isset($argv[1])) {
+        $input = json_decode($argv[1], true);
+    }
     if (!$input) {
         throw new Exception("Invalid input.");
     }
 
+    $action = $input['action'] ?? '';
+    
+    // 1. Action: Get Available Years
+    if ($action === 'get_available_years') {
+        $companyStr = $input['company'] ?? '';
+        if (!$companyStr) {
+            throw new Exception("Missing company.");
+        }
+        $parts = explode('_', $companyStr);
+        $companySymbol = $parts[0];
+        
+        $uploadDir = dirname(__DIR__) . '/uploads/';
+        $jsonFiles = glob($uploadDir . "{$companySymbol}_*_*_pages.json");
+        $availableYears = [];
+        foreach ($jsonFiles as $f) {
+            $base = basename($f);
+            if (preg_match('/_(\d{4})_pages\.json$/', $base, $matches)) {
+                $availableYears[] = intval($matches[1]);
+            }
+        }
+        sort($availableYears);
+        echo json_encode(["years" => $availableYears], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // 2. Action: Synthesize Multi-Year Trend
+    if ($action === 'synthesize') {
+        $companyStr = $input['company'] ?? '';
+        $message = $input['message'] ?? '';
+        $analyses = $input['analyses'] ?? [];
+        if (!$companyStr || !$message || empty($analyses)) {
+            throw new Exception("Missing parameters for synthesis.");
+        }
+        $parts = explode('_', $companyStr);
+        $companySymbol = $parts[0];
+        
+        $analysesText = "";
+        foreach ($analyses as $item) {
+            $y = $item['year'];
+            $r = $item['reply'];
+            $analysesText .= "\n--- {$y} 年分析結果 ---\n{$r}\n";
+        }
+        
+        $systemPrompt = <<<EOT
+你是 Eco Trust AI 系統的專業 ESG 投資顧問，在回答使用者問題時，請以第一人稱「我」自稱。
+【語言要求】你必須且只能使用「繁體中文」（台灣繁體，Traditional Chinese）進行回答，絕對禁止輸出任何簡體字。即使原始數據或報告原文中含有簡體字，你也必須將其轉換為繁體中文再進行回覆！
+使用者正在查詢公司「{$companyStr}」的歷年趨勢資料。
+使用者原始詢問問題是：「{$message}」
+
+以下是系統提供給你的各年度分析報告彙整（每年度報告已經包含對應的 [p.頁碼_年份] 與 [資料庫] 標籤）：
+{$analysesText}
+
+請優先且完全根據上述提供的各年度分析結果，為使用者寫一份有條理、清晰的歷年趨勢綜合分析。
+【來源標註整合鐵律 — 嚴格遵守】
+在你的整合回覆中，你必須完整保留所有類似 [p.12_2021]、[p.?_2022] 或 [資料庫] 格式的來源標籤，並將它們精確地附在對應的事實或數據句尾。絕對禁止刪除、修改或省略這些標籤中的年份尾碼（例如：[p.12_2021] 絕不可被改寫為 [p.12]）！每一個事實、數據或段落都必須標註來源（[p.頁碼_年份] 或 [資料庫]），不可漏標。
+EOT;
+
+        $userMessageContent = "請根據上述提供的各年度資料，對我的問題「{$message}」做歷年趨勢綜合分析整合。請務必保留所有的來源標籤，並遵守繁體中文要求。";
+        
+        $ollamaUrl = "http://localhost:11434/api/chat";
+        $payload = [
+            "model" => "qwen2.5:7b",
+            "messages" => [
+                ["role" => "system", "content" => $systemPrompt],
+                ["role" => "user", "content" => $userMessageContent]
+            ],
+            "stream" => false,
+            "options" => [
+                "num_ctx" => 32768,
+                "num_predict" => 2048,
+                "temperature" => 0.2
+            ]
+        ];
+
+        $ch = curl_init($ollamaUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 300);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($response === false || $httpCode !== 200) {
+            throw new Exception("Ollama 整合分析呼叫失敗: {$curlError} (HTTP {$httpCode})");
+        }
+
+        $responseData = json_decode($response, true);
+        $reply = $responseData['message']['content'] ?? '無法取得彙整回覆。';
+        $reply = convertToTraditional($reply);
+
+        echo json_encode(["reply" => $reply], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // Normal single-year or single-company flow
     $message = $input['message'] ?? '';
     $companyStr = $input['company'] ?? ''; // e.g. "1101_台泥"
     $year = $input['year'] ?? '';
     $history = $input['history'] ?? [];
     $pdfFileName = '';
     $hasPageIndex = false;
+    $isAllYears = false;
 
     if (!$message || !$companyStr || !$year) {
         throw new Exception("Missing parameters.");
@@ -113,6 +239,25 @@ try {
     $parts = explode('_', $companyStr);
     $companySymbol = $parts[0];
     
+    // 3. Cache Read Check for analyze_year
+    $isAnalyzeYear = ($action === 'analyze_year');
+    $cacheFile = '';
+    if ($isAnalyzeYear) {
+        $cacheDir = __DIR__ . '/../scratch/multiyear_cache/';
+        if (!is_dir($cacheDir)) {
+            mkdir($cacheDir, 0777, true);
+        }
+        $cacheKey = md5($companySymbol . '_' . $year . '_' . trim($message));
+        $cacheFile = $cacheDir . $cacheKey . '.json';
+        if (file_exists($cacheFile)) {
+            $cachedData = json_decode(file_get_contents($cacheFile), true);
+            if ($cachedData) {
+                echo json_encode($cachedData, JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+        }
+    }
+
     $db = getDB();
 
     $isAll = ($companyStr === 'ALL_跨公司對比');
@@ -128,7 +273,7 @@ try {
         }
 
         $systemPrompt = <<<EOT
-您是 Eco Trust AI 系統的專業 ESG 投資顧問，具備資深金融分析師與審計專家的嚴謹思維。
+您是 Eco Trust AI 系統的專業 ESG 投資顧問，具備資深金融分析師與審計專家的嚴謹思維。在回答使用者問題時，請以第一人稱「我」自稱。
 使用者正在查詢「全領域跨公司」的綜合比較資料與對話式查核。
 
 以下是系統提取的「跨公司 ESG 與財務綜合對比分析報告 (cross_company_analysis_report.md)」內容：
@@ -137,10 +282,18 @@ try {
 
 請依據上述分析報告的事實，嚴謹回應使用者的對話查核，進行公司間的優劣勢多維對比。
 請遵循以下規範：
-1. 一律使用「繁體中文」回答。
+1. 一律使用「繁體中文」回答，且絕不輸出任何簡體字。
 2. 保持專業、客觀、批判性的風控語氣。
 3. 任何推論與分析必須嚴格基於報告內容，拒絕任何報告中沒有提及的數據與編造。
 4. 可以使用 Markdown 進行清晰的表格與排版。
+
+【來源標註與引用鐵律 — 嚴格遵守】
+為了確保分析的嚴謹度與可追溯性，您在回答中陳述任何數據、事實、政策或事件時，必須嚴格標註來源，並遵守以下引用規則：
+1. 報告內容中標註有 `[資料庫]` 的數據與資訊（如 ROE 數據、ESG 誠信評級指標、誠信信心分數、總承諾數、新聞情感分佈等），在回覆的句尾必須標註 `[資料庫]`。
+2. 報告內容中標註有 `[p.頁碼_公司代號_年份]`（例如 `[p.36_1101_2024]`、`[p.120_1103_2023]`、`[p.1360_2330_2022]` 等）的數據與政策，在回覆的句尾必須**完整且精確複製**該標籤（包含底線、公司代號與年份，例如 `[p.120_1103_2023]`），絕對禁止將其簡化為 `[p.頁碼]` 或將年份與代號刪除！
+3. 若一句話或段落同時引用了資料庫與報告原文的內容，請同時標註，例如：`[p.36_1101_2024][資料庫]`。
+4. 絕對禁止省略、刪除或修改這些來源標籤。凡是陳述的具體數據與事實，其句尾必須有來源標籤。
+5. 請特別注意公司代號與名稱的對應，絕對禁止混淆公司名稱與代號（例如 1109 是「信大」， 1108 是「幸福」，2330 是「台積電」，1101 是「台泥」），避免產生如「1109 信大（幸福水泥）」的混淆。
 EOT;
 
     } else {
@@ -192,20 +345,21 @@ EOT;
         // 3. Fetch News
         $newsData = [];
         if ($isAllYears) {
-            $stmt3 = $db->prepare("SELECT report_year, published, title, sentiment, confidence FROM news WHERE company_symbol = ? ORDER BY report_year DESC, published DESC LIMIT 30");
+            $stmt3 = $db->prepare("SELECT report_year, published, title, sentiment, confidence, link FROM news WHERE company_symbol = ? ORDER BY report_year DESC, published DESC LIMIT 30");
             $stmt3->bind_param("i", $companySymbol);
         } else {
-            $stmt3 = $db->prepare("SELECT report_year, published, title, sentiment, confidence FROM news WHERE company_symbol = ? AND report_year = ? ORDER BY published DESC LIMIT 10");
+            $stmt3 = $db->prepare("SELECT report_year, published, title, sentiment, confidence, link FROM news WHERE company_symbol = ? AND report_year = ? ORDER BY published DESC LIMIT 10");
             $stmt3->bind_param("ii", $companySymbol, $year);
         }
         $stmt3->execute();
         $res3 = $stmt3->get_result();
         while ($row3 = $res3->fetch_assoc()) {
             $pubDate = !empty($row3['published']) ? $row3['published'] : '日期未知';
+            $link = !empty($row3['link']) ? $row3['link'] : '';
             if ($isAllYears) {
-                $newsData[] = "- [{$row3['report_year']}年] [發布: {$pubDate}] [{$row3['sentiment']}] {$row3['title']}";
+                $newsData[] = "- [{$row3['report_year']}年] [發布: {$pubDate}] [{$row3['sentiment']}] {$row3['title']} (新聞連結: {$link})";
             } else {
-                $newsData[] = "- [發布: {$pubDate}] [{$row3['sentiment']}] (信心: {$row3['confidence']}) {$row3['title']}";
+                $newsData[] = "- [發布: {$pubDate}] [{$row3['sentiment']}] (信心: {$row3['confidence']}) {$row3['title']} (新聞連結: {$link})";
             }
         }
         $newsText = empty($newsData) ? "無相關新聞數據。" : implode("\n", $newsData);
@@ -257,22 +411,27 @@ EOT;
         $yearDisplay = $isAllYears ? "歷年(多年份)" : "{$year} 年";
         $kbLabel = $hasPageIndex ? 'ESG 報告書【PDF 報告原文】 (含頁碼標註)' : 'ESG 報告書【PDF 報告原文】 (MD 格式)';
         
-        $citationRule = $hasPageIndex ? <<<CITE
+        $citationRule = <<<CITE
 
 【來源標註鐵律 — 嚴格遵守】
-您收到的真實數據由「結構化資料庫」與「PDF 報告原文」兩部分組成。您必須遵守以下引用規則：
-1. 任何來自「財報 ROE 數據」、「ESG 排放與承諾數據（包含信賴度分數、承諾數等指標與高信度承諾列表）」、「新聞」這三個【結構化資料庫】區塊的數據與資訊，**一律嚴格在句尾標註為 [資料庫]，絕對禁止標註為頁碼（如 [p.1] 或 [p.2]）**。
-2. 任何來自「{$kbLabel}」區塊的內容（這是【PDF 報告原文】），已按「【第X頁】」標註了每段文字所在的原始 PDF 頁碼。凡是引用或陳述來自此處的具體政策、行動、承諾或敘述，**一律必須在句尾附帶對應的原文頁碼標籤，格式為 [p.頁碼]（例如：「台泥 DAKA 再生資源利用中心 [p.160]」）**。絕對禁止將其標註為 [資料庫]。
-3. 若一句話同時引用了資料庫與報告原文的內容，請同時標註，例如：`[p.185][資料庫]`。
-4. 若無法確定來源，必須標註 [p.?] 並附帶說明「此為推論，非報告原文」。
-5. 絕對禁止省略來源標籤。每一個事實、數據或段落都必須標註來源（[p.頁碼] 或 [資料庫]），不可漏標。
-CITE
-        : "\n請盡量引用具體數據來源。";
+你（AI 助理）收到的真實數據由「結構化資料庫」與「PDF 報告原文」兩部分組成。作為 AI 助理，你必須嚴格遵守以下引用規則，並以第一人稱「我」回答問題：
+1. 任何來自「財報 ROE 數據」與「ESG 排放與承諾數據（包含信賴度分數、承諾數等指標與高信度承諾列表）」這兩個【結構化資料庫】區塊的數據與資訊，**一律嚴格在句尾標註為 [資料庫]，絕對禁止標註為頁碼**。
+2. 任何來自「新聞」區塊的資訊，如果提及該新聞或事件，**一律必須在句尾標註對應的 markdown 連結，格式為 [新聞](該新聞的網址)（例如：[新聞](https://...)），嚴禁直接將完整長網址貼在正文中，也絕對禁止標註為 [資料庫] 或頁碼！**
+CITE;
+        if ($hasPageIndex) {
+            $citationRule .= <<<CITE
+3. 任何來自「{$kbLabel}」區塊的內容（這是【PDF 報告原文】），已按「【第X頁】」標註了每段文字所在的原始 PDF 頁碼。凡是引用或陳述來自此處的具體政策、行動、承諾或敘述，**一律必須在句尾附帶對應的原文頁碼標籤，格式為 [p.頁碼]（例如：「台泥 DAKA 再生資源利用中心 [p.160]」）**。絕對禁止將其標註為 [資料庫] 或連結。
+CITE;
+        }
+        $citationRule .= <<<CITE
+4. 絕對禁止省略來源標籤。每一個事實、數據或段落都必須標註來源（[p.頁碼]、[資料庫] 或 [新聞](網址)），不可漏標。
+CITE;
         
         $systemPrompt = <<<EOT
-您是 Eco Trust AI 系統的專業 ESG 投資顧問。
+你是 Eco Trust AI 系統的專業 ESG 投資顧問，在回答使用者問題時，請以第一人稱「我」自稱。
+【語言要求】你必須且只能使用「繁體中文」（台灣繁體，Traditional Chinese）進行回答，絕對禁止輸出任何簡體字。即使原始數據或報告原文中含有簡體字，你也必須將其轉換為繁體中文再進行回覆！
 使用者正在查詢公司「{$companyStr}」在 {$yearDisplay} 的資料。
-以下是系統提供給您的真實數據與報告內容：
+以下是系統提供給你的真實數據與報告內容：
 
 === 結構化資料庫：財報 ROE 數據 ({$yearDisplay}) ===
 {$roeText}
@@ -287,7 +446,12 @@ CITE
 {$mdContent}
 {$citationRule}
 
-請優先且完全根據上述提供的真實數據與報告內容回答使用者的問題。對於報告中具體的政策、措施或數據，請嚴格參照報告原文，並標註對應來源（[p.頁碼] 或 [資料庫]）。如果上述資料完全沒有提及，請說明報告中未記載此內容。
+【無資料時的拒答鐵律 — 嚴格遵守】
+若使用者詢問的對象、公司、指標或任何內容在上述提供的真實數據中「完全沒有提及」（例如詢問系統中不存在的公司「可口可樂」），你必須直接表明系統提供的資料庫中沒有該對象的資料，並拒絕回答該部分。絕對禁止使用你大模型自身的預訓練知識來編造、臆測或提供該對象的任何財務、ESG 或具體數據，也絕對禁止在此類無中生有的內容後標註 [p.?]！
+
+請優先且完全根據上述提供的真實數據與報告內容回答使用者的問題。
+特別注意：如果使用者的問題極為簡短、抽象或語意模糊（例如「好不好？」、「做得如何？」、「is it good?」、「表現怎樣？」等），這代表使用者是在詢問「該公司在該年度的整體表現（包含財務 ROE、ESG 減碳指標及新聞表現等）做得好不好」。此時你必須主動結合上述提供的所有數據進行綜合分析，提供客觀的評估與解讀，而不是回應系統指令或規範。
+對於報告中具體之政策、措施或數據，請嚴格參照報告原文，並標註對應來源（[p.頁碼] 或 [資料庫]）。如果上述資料完全沒有提及，請說明報告中未記載此內容。
 請一律使用「繁體中文」回答，並且保持專業、客觀的語氣。可以使用 Markdown 排版。
 EOT;
     }
@@ -307,10 +471,13 @@ EOT;
         ];
     }
     
-    // 為了防止模型在長文本脈絡下忽略來源標註，我們在使用者問題句尾加上強制提醒
-    $userMessageContent = $message;
+    // 為了防止模型在長文本脈絡下忽略來源標註及簡體字要求，我們使用結構化的方式強制提醒，置於使用者訊息尾端
+    $userMessageContent = "【使用者問題】\n{$message}";
+    $userMessageContent .= "\n\n【系統回覆規範】\n1. 請優先且完全根據上述提供的真實數據回答上面的問題。\n2. 必須且只能使用「繁體中文」回答，絕對禁止輸出任何簡體字！";
     if ($hasPageIndex) {
-        $userMessageContent .= "\n\n(重要提醒：請務必根據提供的真實數據與報告原文回答，並在引用或陳述報告原文的句尾標註 [p.頁碼]，來自資料庫的標註 [資料庫]，嚴禁省略任何來源標籤！)";
+        $userMessageContent .= "\n3. 回覆時在引用或陳述報告原文的句尾必須標註 [p.頁碼]，來自資料庫的標註 [資料庫]，來自新聞的必須標註 [新聞](新聞連結)，嚴禁省略任何來源標籤！";
+    } else if ($isAllYears) {
+        $userMessageContent .= "\n3. 回覆時引用或陳述的所有數據與事實，其句尾必須嚴格標註 [資料庫] 或新聞連結 [新聞](新聞連結)，絕對禁止省略來源標籤！";
     }
     $messages[] = ["role" => "user", "content" => $userMessageContent];
 
@@ -377,12 +544,25 @@ EOT;
     }
     
     $reply = $responseData['message']['content'] ?? '無法取得回覆。';
+    $reply = convertToTraditional($reply);
     file_put_contents($debugLog, "Reply length: " . mb_strlen($reply, 'UTF-8') . " chars\n", FILE_APPEND);
     file_put_contents($debugLog, "Reply content: " . mb_substr($reply, 0, 500, 'UTF-8') . "\n", FILE_APPEND);
 
-    $response = ['reply' => $reply];
-    if (!empty($pdfFileName)) {
-        $response['pdf_file'] = $pdfFileName;
+    if ($isAnalyzeYear) {
+        // Post-process page tags in $reply to append year (e.g. [p.12] -> [p.12_2021])
+        $reply = preg_replace('/\[p\.\s*(\d+)\s*\]/', '[p.$1_' . $year . ']', $reply);
+        
+        $response = ['reply' => $reply];
+        if (!empty($pdfFileName)) {
+            $response['pdf_file'] = $pdfFileName;
+        }
+        // Save to cache
+        file_put_contents($cacheFile, json_encode($response, JSON_UNESCAPED_UNICODE));
+    } else {
+        $response = ['reply' => $reply];
+        if (!empty($pdfFileName)) {
+            $response['pdf_file'] = $pdfFileName;
+        }
     }
     echo json_encode($response, JSON_UNESCAPED_UNICODE);
 
